@@ -1,0 +1,763 @@
+/* $LauncherFile=z:\PortableAppz\ReplaceStudioPortable\App\AppInfo\Launcher\ReplaceStudioPortable.ini
+$EXEFILE=ReplaceStudioPortable.exe
+$AppID=ReplaceStudioPortable
+$BaseName=ReplaceStudioPortable
+$EXEDIR=z:\PortableAppz\ReplaceStudioPortable */
+
+/* 
+Function .onInit          ;{{{1
+	${RunSegment} Custom
+	${RunSegment} Core
+	${RunSegment} Temp
+	${RunSegment} Language
+	${RunSegment} OperatingSystem
+	${RunSegment} RunAsAdmin
+FunctionEnd
+
+Function Init             ;{{{1
+	${RunSegment} Custom
+	${RunSegment} Core
+	${RunSegment} PathChecks
+	${RunSegment} Settings
+	${RunSegment} DriveLetter
+	${RunSegment} DirectoryMoving
+	${RunSegment} Variables
+	${RunSegment} Language
+	${RunSegment} Registry
+	${RunSegment} Java
+	${RunSegment} RunLocally
+	${RunSegment} Temp
+	${RunSegment} InstanceManagement
+	${RunSegment} SplashScreen
+	${RunSegment} RefreshShellIcons
+FunctionEnd
+
+Function Pre              ;{{{1
+	${RunSegment} Custom
+	${RunSegment} RunLocally
+	${RunSegment} Temp
+	${RunSegment} Environment
+	${RunSegment} ExecString
+FunctionEnd
+
+Function PrePrimary       ;{{{1
+	${RunSegment} Custom
+	${RunSegment} DriveLetter
+	${RunSegment} Variables
+	${RunSegment} DirectoryMoving
+	${RunSegment} FileWrite
+	${RunSegment} FilesMove
+	${RunSegment} DirectoriesMove
+	;${RunSegment} RegisterDLL
+	${RunSegment} RegistryKeys
+	${RunSegment} RegistryValueBackupDelete
+	${RunSegment} RegistryValueWrite
+	${RunSegment} Services
+FunctionEnd
+
+Function PreSecondary     ;{{{1
+	${RunSegment} Custom
+	;${RunSegment} *
+FunctionEnd
+
+Function PreExec          ;{{{1
+	${RunSegment} Custom
+	${RunSegment} RefreshShellIcons
+	${RunSegment} WorkingDirectory
+FunctionEnd
+
+Function PreExecPrimary   ;{{{1
+	${RunSegment} Custom
+	${RunSegment} Core
+	${RunSegment} SplashScreen
+FunctionEnd
+
+Function PreExecSecondary ;{{{1
+	${RunSegment} Custom
+	;${RunSegment} *
+FunctionEnd
+
+Function PostPrimary      ;{{{1
+	${RunSegment} Services
+	${RunSegment} RegistryValueBackupDelete
+	${RunSegment} RegistryKeys
+	${RunSegment} RegistryCleanup
+	;${RunSegment} RegisterDLL
+	${RunSegment} Qt
+	${RunSegment} DirectoriesMove
+	${RunSegment} FilesMove
+	${RunSegment} DirectoriesCleanup
+	${RunSegment} RunLocally
+	${RunSegment} Temp
+	${RunSegment} Custom
+FunctionEnd
+
+Function PostSecondary    ;{{{1
+	;${RunSegment} *
+	${RunSegment} Custom
+FunctionEnd
+
+Function Post             ;{{{1
+	${RunSegment} RefreshShellIcons
+	${RunSegment} Custom
+FunctionEnd
+ */
+
+
+${SegmentFile}
+
+!include x64.nsh
+!include WinVer.nsh
+!include servicelibnew.nsh
+
+Var ServiceImage
+Var ServiceOldPath
+Var ServiceOldImage
+Var ServiceRealPath
+Var ServiceDir
+Var ServiceExe
+Var ServiceName
+Var ServiceDepend
+Var ServiceUser
+Var ServiceDisplay
+Var ServiceStartType
+Var ServiceServiceType
+
+Var DeviceName
+Var DeviceInf
+Var DeviceInfHWID
+Var DeviceInfPath
+Var DeviceExePath
+Var DllDes
+Var DllPath
+Var dlldir
+Var OSarch
+Var FunBaseDir
+Var InstallCmd
+Var UnInstallCmd
+
+!define SERVICESECPRIF "CustomServ"
+!define DEVICESECPRIF "CustomDev"
+!define DEVICECOMSEC "CustomCom"
+!define SERVICECOMSEC "CustomCom"
+!define ORDERDELIMITER ","
+!define REGSVR32SECPRIF "CustomDll"
+
+Function ServiceImagePath
+
+	Exch $0
+	Push $1
+	Push $2
+	ExpandEnvStrings  $0 "$0"
+	${GetFileName} $SYSDIR $1
+	; MessageBox MB_OK "$0$\n$1"
+	${WordFind} "$0" "\" "+1" $2
+	${If} $1 == $2
+		StrCpy $0 "$WINDIR\$0"
+	${EndIf}
+	${WordReplace} "$0" "\systemroot" "$WINDIR" "+*" $0
+	${WordReplace} "$0" "\??\" "" "+1*" $0
+
+	; MessageBox MB_OK "$0"
+	Pop $2
+	Pop $1
+	Exch $0
+
+FunctionEnd
+
+Function PathParse
+	Exch $0
+	Push $1
+	ExpandEnvStrings $0 "$0"
+	${GetRoot} "$0" $1
+	${if} $1 == ""
+		StrCpy $1 "$FunBaseDir" "" -1
+		${If} $1 == "\"
+			StrCpy $0 "$FunBaseDir$0"
+		${Else}
+			StrCpy $0 "$FunBaseDir\$0"
+		${EndIf}
+		GetFullPathName $0 "$0"
+	${Else}
+		GetFullPathName $0 "$0"
+	${EndIf}
+	Pop $1
+	Exch $0
+FunctionEnd
+
+LangString ServiceMessage1 1033 "Unable to get service and driver default path, environment variable not set."
+LangString ServiceMessage1 2052 "无法获取服务和驱动的默认路径，环境变量未设置。"
+
+${SegmentInit}
+
+	${SetEnvironmentVariable} PORTABLEBASEDIR $EXEDIR
+	${SetEnvironmentVariable} PORTABLEBASENAME $BaseName
+	SetShellVarContext all
+	${SetEnvironmentVariable} ALLUSERDOCUMENTS $DOCUMENTS
+
+	IfFileExists "$EXEDIR\App\DefaultData" 0 +3
+	IfFileExists "$EXEDIR\Data" +2 0
+	CopyFiles "$EXEDIR\App\DefaultData\*.*" "$EXEDIR\Data"
+	
+	${LineSum} "$EXEDIR\$BaseName.ini" $0
+	${IfNot} ${FileExists} "$EXEDIR\$BaseName.ini"
+	${OrIf} $0 < 10
+		; IfFileExists "$EXEDIR\$BaseName.ini" +10 0
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" UserName ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" AdditionalParameters ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" DisableSplashScreen "true"
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" RunLocally "false"
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" SingleAppInstance ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" SinglePortableAppInstance ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" AlwaysUse32Bit ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView ""
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection "true"
+	${EndIf}
+
+	${If} ${RunningX64}
+/* 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
+		${If} $0 == 64
+			SetRegView 64
+		${EndIf}
+		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
+		${If} $0 == false
+			${DisableX64FSRedirection}
+		${EndIf} */
+		StrCpy $OSarch 64
+		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable64
+		${If} $0 != ""
+		${AndIf} ${FileExists} "$EXEDIR\App\$0"
+			${GetParent} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ServiceDir $1
+			${SetEnvironmentVariable} DeviceDir $1
+		${ElseIf} $0 == ""
+			ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
+			${GetParent} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ServiceDir $1
+			${SetEnvironmentVariable} DeviceDir $1
+		${ElseIf} $0 != ""
+			MessageBox MB_OK "$(ServiceMessage1)"
+			Abort
+		${EndIf}
+	${Else}
+		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
+		${If} $0 != ""
+		${AndIf} ${FileExists} "$EXEDIR\App\$0"
+			${GetParent} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ServiceDir $1
+			${SetEnvironmentVariable} DeviceDir $1
+		${Else}
+			MessageBox MB_OK "$(ServiceMessage1)"
+			Abort
+		${EndIf}
+	${EndIf}
+
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" AlwaysUse32Bit
+	${If} $0 == true
+		StrCpy $Bits 32
+	${EndIf}
+
+	${If} $Bits == 64
+		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable64
+		${If} $0 != ""
+		${AndIf} ${FileExists} "$EXEDIR\App\$0"
+			SetRegView 64
+			${GetParent} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ProgramDir $1
+			${GetFileName} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ProgramName $1
+		${Else}
+			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
+			${If} $0 == 64
+				SetRegView 64
+			${EndIf}
+			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
+			${If} $0 == false
+				${DisableX64FSRedirection}
+			${EndIf}	
+			ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
+			${GetParent} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ProgramDir $1
+			${GetFileName} "$EXEDIR\App\$0" $1
+			${SetEnvironmentVariable} ProgramName $1
+		${EndIf}
+	${EndIf}
+	${If} $Bits == 32
+		${If} $OSarch == 64
+			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
+			${If} $0 == 64
+				SetRegView 64
+			${EndIf}
+			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
+			${If} $0 == false
+				${DisableX64FSRedirection}
+			${EndIf}
+		${EndIf}
+		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable	
+		${GetParent} "$EXEDIR\App\$0" $1
+		${SetEnvironmentVariable} ProgramDir $1
+		${GetFileName} "$EXEDIR\App\$0" $1
+		${SetEnvironmentVariable} ProgramName $1
+	${EndIf}
+
+	ClearErrors
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" UserName
+	${IfNot} ${Errors}
+	${AndIf} $0 != ""
+		${SetEnvironmentVariable} ProfileUserName $0
+	${EndIf}
+
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" SingleAppInstance
+	${If} $0 == false
+	${OrIf} $0 == true
+		WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch SingleAppInstance $0
+	${EndIf}
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" SinglePortableAppInstance
+	${If} $0 == false
+	${OrIf} $0 == true
+		WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch SinglePortableAppInstance $0
+	${EndIf}
+
+!macroend
+
+${SegmentPreExec}
+
+	ClearErrors
+	ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch WorkingDirectory
+	${IfNot} ${Errors}
+	${AndIf} $0 != ""
+		${ParseLocations} $0
+		IfFileExists $0 +2 0
+		CreateDirectory $0
+	${EndIf}
+
+	ClearErrors
+	${ReadLauncherConfig} $0 Environment HOME
+	${IfNot} ${Errors}
+	${AndIf} $0 != ""
+		${ParseLocations} $0
+		IfFileExists $0 +2 0
+		CreateDirectory $0
+	${EndIf}
+
+!macroend
+
+${SegmentPrePrimary}
+
+	${ReadLauncherConfig} $0 Custom Device
+	${If} $0 == true
+		${ReadLauncherConfig} $InstallCmd ${DEVICECOMSEC} DevInstallCmd
+		${If} $InstallCmd != ""
+		${AndIf} $InstallCmd != "placeholder"
+			ReadEnvStr $FunBaseDir DeviceDir
+			Push $InstallCmd
+			call PathParse
+			Pop $InstallCmd
+			${If} $InstallCmd != ""
+				ExecDos::exec /TOSTACK '$InstallCmd' '' ''
+			${EndIf}
+			Goto SKIPDEVSEC
+		${EndIf}
+		${ReadLauncherConfig} $DeviceExePath ${DEVICECOMSEC} DevExeDir
+		ReadEnvStr $FunBaseDir DeviceDir
+		Push $DeviceExePath
+		call PathParse
+		Pop $DeviceExePath
+		${If} ${RunningX64}
+			${ReadLauncherConfig} $0 ${DEVICECOMSEC} DevExe64
+			StrCpy $DeviceExePath "$DeviceExePath\$0"
+		${Else}
+			${ReadLauncherConfig} $0 ${DEVICECOMSEC} DevExe
+			StrCpy $DeviceExePath "$DeviceExePath\$0"
+		${EndIf}
+		; MessageBox MB_OK "DeviceExePath=$DeviceExePath"
+		${IfThen} $DeviceExePath == "" ${|} Goto SKIPDEVSEC ${|}
+		${ReadLauncherConfig} $R2 ${DEVICECOMSEC} DevInsOrder
+		${If} $R2 != ""
+			${WordFind} "$0" "${ORDERDELIMITER}" "#" $R1
+			${If} $R1 < 2
+				StrCpy $R1 0
+				StrCpy $R0 1
+			${EndIf}
+		${Else}
+			StrCpy $R0 1
+			StrCpy $R1 0
+		${EndIf}
+		${Do}
+			${If} $R1 >= 1
+				${WordFind} "$R2" "${ORDERDELIMITER}" "-$R1" $R0
+			${EndIf}
+			ClearErrors
+			${ReadLauncherConfig} $DeviceName ${DEVICESECPRIF}$R0 DevName
+			${ReadLauncherConfig} $DeviceInf ${DEVICESECPRIF}$R0 DevInf
+			${ReadLauncherConfig} $DeviceInfHWID ${DEVICESECPRIF}$R0 DevInfHWID
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${ReadLauncherConfig} $DeviceInfPath ${DEVICECOMSEC} InfDir
+			ReadEnvStr $FunBaseDir DeviceDir
+			Push $DeviceInfPath
+			Call PathParse
+			Pop $DeviceInfPath
+			StrCpy $DeviceInfPath "$DeviceInfPath\$DeviceInf"
+			ExecDos::exec /TOSTACK '"$DeviceExePath" status "$DeviceInfHWID"' '' ''
+			Pop $0
+			Pop $0
+			; MessageBox MB_OK "Status $0"
+			${If} $0 == "No matching devices found."
+				; MessageBox MB_OK '"$DeviceExePath" install "$DeviceInfPath" "$DeviceInfHWID"'
+				ExecDos::exec /TOSTACK '"$DeviceExePath" install "$DeviceInfPath" "$DeviceInfHWID"' '' ''
+				!insertmacro SERVICE "start" "$DeviceName" ""
+			${EndIf}
+			${If} $R1 >= 0
+				IntOp $R1 $R1 - 1
+			${EndIf}
+			IntOp $R0 $R0 + 1
+			; MessageBox MB_OK "$R0, $R1, $R2"
+		${LoopWhile} $R1 != 0
+	${EndIf}
+	SKIPDEVSEC:
+
+${ReadLauncherConfig} $0 Custom Service
+${If} $0 == true
+	${ReadLauncherConfig} $InstallCmd ${SERVICECOMSEC} ServInstallCmd
+	${If} $InstallCmd != ""
+	${AndIf} $InstallCmd != "placeholder"
+		ReadEnvStr $FunBaseDir ServiceDir
+		Push $InstallCmd
+		call PathParse
+		Pop $InstallCmd
+		${If} $InstallCmd != ""
+			ExecDos::exec /TOSTACK '$InstallCmd' '' ''
+		${EndIf}
+		Goto SKIPSERVSEC
+	${EndIf}
+	${ReadLauncherConfig} $R2 ${SERVICECOMSEC} ServInsOrder
+	${If} $R2 != ""
+		${WordFind} "$0" "${ORDERDELIMITER}" "#" $R1
+		${If} $R1 < 2
+			StrCpy $R1 0
+			StrCpy $R0 1
+		${EndIf}
+	${Else}
+		StrCpy $R0 1
+		StrCpy $R1 0
+	${EndIf}
+	${Do}
+		${If} $R1 >= 1
+			${WordFind} "$R2" "${ORDERDELIMITER}" "-$R1" $R0
+		${EndIf}
+		ClearErrors
+		${ReadLauncherConfig} $ServiceName ${SERVICESECPRIF}$R0 Name
+		${If} ${RunningX64}
+			${ReadLauncherConfig} $ServiceImage ${SERVICESECPRIF}$R0 Path64
+			${If} $ServiceImage == ""
+				${ReadLauncherConfig} $ServiceImage ${SERVICESECPRIF}$R0 Path
+			${EndIf}
+		${Else}
+			${ReadLauncherConfig} $ServiceImage ${SERVICESECPRIF}$R0 Path
+		${EndIf}
+		${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+		ReadEnvStr $FunBaseDir ServiceDir
+		Push $ServiceImage
+		call PathParse
+		Pop $ServiceImage
+		${ReadLauncherConfig} $ServiceDisplay ${SERVICESECPRIF}$R0 Display
+		${ReadLauncherConfig} $ServiceServiceType ${SERVICESECPRIF}$R0 Type
+		${ReadLauncherConfig} $ServiceStartType ${SERVICESECPRIF}$R0 Start
+		${ReadLauncherConfig} $ServiceDepend ${SERVICESECPRIF}$R0 Dependencies
+		${ReadLauncherConfig} $ServiceUser ${SERVICESECPRIF}$R0 User
+		${If} $ServiceUser == LocalService
+		${OrIf} $ServiceUser == NetworkService
+			StrCpy $ServiceUser "NT AUTHORITY\$ServiceUser"
+		${EndIf}
+
+		!insertmacro SERVICE "status" "$ServiceName" ""
+		Pop $0
+		${If} $0 == false
+
+/* 			MessageBox MB_OK '!insertmacro SERVICE "create" "$ServiceName" \
+			"path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
+			display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"' */
+			!insertmacro SERVICE "create" "$ServiceName" \
+			"path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
+			display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+			; Pop $0
+			; MessageBox MB_OK "Create service code: $0"
+			WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage ""
+
+		${Else}
+			ReadRegStr $ServiceOldImage  HKLM "SYSTEM\CurrentControlSet\services\$ServiceName" ImagePath
+			Push $ServiceOldImage
+			call ServiceImagePath
+			Pop $0
+			Push $ServiceImage
+			call ServiceImagePath
+			Pop $1
+			${If} $0 != $1
+				MessageBox MB_YESNO "$(ServiceMessage2)" IDYES 0 IDNO ServiceNo
+				!insertmacro SERVICE "stop" "$ServiceName" ""
+				!insertmacro SERVICE "delete" "$ServiceName" ""
+				!insertmacro SERVICE "create" "$ServiceName" \
+				"path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
+				display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+				; Pop $0
+				; MessageBox MB_OK "Create service code: $0"
+				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage "$ServiceOldImage"
+				Goto ServiceYes
+				ServiceNo:
+				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage "ServiceOldImage"
+				ServiceYes:
+			${Else}
+				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage ""
+			${EndIf}
+		${EndIf}
+		!insertmacro SERVICE "running" "$ServiceName" ""
+		Pop $0
+		${IfThen} $0 == false ${|} !insertmacro SERVICE "start" "$ServiceName" "" ${|}
+		; Pop $0
+		; MessageBox MB_OK "Start service $ServiceName code: $0"
+		${If} $R1 >= 0
+			IntOp $R1 $R1 - 1
+		${EndIf}
+		IntOp $R0 $R0 + 1
+		; MessageBox MB_OK "$R0, $R1, $R2"
+	${LoopWhile} $R1 != 0
+${EndIf}
+SKIPSERVSEC:
+
+	${ReadLauncherConfig} $0 Custom Regsvr32
+	${If} $0 == true
+		ReadEnvStr $dlldir ProgramDir
+		StrCpy $FunBaseDir "$dlldir"
+		StrCpy $R0 1
+		${Do}
+			ClearErrors
+			${ReadLauncherConfig} $DllDes ${REGSVR32SECPRIF}$R0 Description
+			${If} ${RunningX64}
+				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path64
+				${If} $DllPath == ""
+					${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path
+				${EndIf}
+			${Else}
+				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path
+			${EndIf}
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			Push $DllPath
+			Call PathParse
+			Pop $DllPath
+			; ExpandEnvStrings $DllPath "$DllPath"
+			ExecDos::exec /TOSTACK 'regsvr32 /s "$DllPath"' '' ''
+			IntOp $R0 $R0 + 1
+		${Loop}
+	${EndIf}
+
+!macroend
+
+${OverrideExecute}
+
+	${!getdebug}
+	!ifdef DEBUG
+		${If} $WaitForProgram != false
+			${DebugMsg} "About to execute the following string and wait till it's done: $ExecString"
+		${Else}
+			${DebugMsg} "About to execute the following string and finish: $ExecString"
+		${EndIf}
+	!endif
+	${EmptyWorkingSet}
+	ClearErrors
+	${ReadLauncherConfig} $0 Launch HideCommandLineWindow
+	${If} $0 == true
+		; TODO: do this without a plug-in or at least some way it won't wait with secondary
+		ExecDos::exec $ExecString
+		Pop $0
+	${Else}
+		${IfNot} ${Errors}
+		${AndIf} $0 != false
+			${InvalidValueError} [Launch]:HideCommandLineWindow $0
+		${EndIf}
+		${If} $WaitForProgram != false
+			ExecWait $ExecString
+		${Else}
+			Exec $ExecString
+		${EndIf}
+	${EndIf}
+	${DebugMsg} "$ExecString has finished."
+
+	${If} $WaitForProgram != false
+		; Wait till it's done
+		ClearErrors
+		${ReadLauncherConfig} $0 Launch WaitForOtherInstances
+		${If} $0 == true
+		${OrIf} ${Errors}
+			${GetFileName} $ProgramExecutable $1
+			${DebugMsg} "Waiting till any other instances of $1 and any [Launch]:WaitForEXE[N] values are finished."
+			${EmptyWorkingSet}
+			${Do}
+				${ProcessWaitClose} $1 -1 $R9
+				${IfThen} $R9 > 0 ${|} ${Continue} ${|}
+				StrCpy $0 1
+				${Do}
+					ClearErrors
+					${ReadLauncherConfig} $2 Launch WaitForEXE$0
+					${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+					${ProcessWaitClose} $2 -1 $R9
+					${IfThen} $R9 > 0 ${|} ${ExitDo} ${|}
+					IntOp $0 $0 + 1
+				${Loop}
+			${LoopWhile} $R9 > 0
+			${DebugMsg} "All instances are finished."
+		${ElseIf} $0 != false
+			${InvalidValueError} [Launch]:WaitForOtherInstances $0
+		${EndIf}
+	${EndIf}
+
+	${ReadLauncherConfig} $0 Custom Regsvr32
+	${If} $0 == true
+		ReadEnvStr $dlldir ProgramDir
+		StrCpy $FunBaseDir "$dlldir"
+		StrCpy $R0 1
+		${Do}
+			ClearErrors
+			${ReadLauncherConfig} $DllDes ${REGSVR32SECPRIF}$R0 Description
+			${If} ${RunningX64}
+				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path64
+				${If} $DllPath == ""
+					${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path
+				${EndIf}
+			${Else}
+				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path
+			${EndIf}
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			Push $DllPath
+			Call PathParse
+			Pop $DllPath
+			; ExpandEnvStrings $DllPath "$DllPath"
+			ExecDos::exec /TOSTACK 'regsvr32 /s /u "$DllPath"' '' ''
+			IntOp $R0 $R0 + 1
+		${Loop}
+	${EndIf}
+
+!macroend
+
+
+${SegmentPostPrimary}
+
+	${ReadLauncherConfig} $0 Custom Device
+	${If} $0 == true
+		${ReadLauncherConfig} $UnInstallCmd ${DEVICECOMSEC} DevUnInstallCmd
+		${If} $UnInstallCmd != ""
+		${AndIf} $UnInstallCmd != "placeholder"
+			ReadEnvStr $FunBaseDir DeviceDir
+			Push $UnInstallCmd
+			call PathParse
+			Pop $UnInstallCmd
+			${If} $UnInstallCmd != ""
+				ExecDos::exec /TOSTACK '$UnInstallCmd' '' ''
+			${EndIf}
+			Goto SKIPUNDEVSEC
+		${EndIf}
+		${ReadLauncherConfig} $R2 ${DEVICECOMSEC} DevUninsOrder
+		${If} $R2 != ""
+			${WordFind} "$0" "${ORDERDELIMITER}" "#" $R1
+			${If} $R1 < 2
+				StrCpy $R1 0
+				StrCpy $R0 1
+			${EndIf}
+		${Else}
+			StrCpy $R0 1
+			StrCpy $R1 0
+		${EndIf}
+		${Do}
+			${If} $R1 >= 1
+				${WordFind} "$R2" "${ORDERDELIMITER}" "-$R1" $R0
+			${EndIf}
+			ClearErrors
+			${ReadLauncherConfig} $DeviceName ${DEVICESECPRIF}$R0 DevName
+			${ReadLauncherConfig} $DeviceInf ${DEVICESECPRIF}$R0 DevInf
+			${ReadLauncherConfig} $DeviceInfHWID ${DEVICESECPRIF}$R0 DevInfHWID
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${ReadLauncherConfig} $0 ${DEVICESECPRIF}$R0 RemoveFlag
+			${If} $0 == true
+				ExecDos::exec /TOSTACK '"$DeviceExePath" remove "$DeviceInfHWID"' '' ''
+				!insertmacro SERVICE "stop" "$DeviceName" ""
+				!insertmacro SERVICE "delete" "$DeviceName" ""
+			${Else}
+				!insertmacro SERVICE "stop" "$DeviceName" ""
+				!insertmacro SERVICE "config" "$DeviceName" "starttype=0x00000003;"
+				; Pop $0
+				; MessageBox MB_OK "$0"
+			${EndIf}
+			${If} $R1 >= 0
+				IntOp $R1 $R1 - 1
+			${EndIf}
+			IntOp $R0 $R0 + 1
+			; MessageBox MB_OK "$R0, $R1, $R2"
+		${LoopWhile} $R1 != 0
+	${EndIf}
+	SKIPUNDEVSEC:
+
+${ReadLauncherConfig} $0 Custom Service
+${If} $0 == true
+		${ReadLauncherConfig} $UnInstallCmd ${SERVICECOMSEC} ServUnInstallCmd
+		${If} $UnInstallCmd != ""
+		${AndIf} $UnInstallCmd != "placeholder"
+			ReadEnvStr $FunBaseDir DeviceDir
+			Push $UnInstallCmd
+			call PathParse
+			Pop $UnInstallCmd
+			${If} $UnInstallCmd != ""
+				ExecDos::exec /TOSTACK '$UnInstallCmd' '' ''
+			${EndIf}
+			Goto SKIPUNSERVSEC
+		${EndIf}
+	${ReadLauncherConfig} $R2 ${SERVICECOMSEC} ServUninsOrder
+	${If} $R2 != ""
+		${WordFind} "$0" "${ORDERDELIMITER}" "#" $R1
+		${If} $R1 < 2
+			StrCpy $R1 0
+			StrCpy $R0 1
+		${EndIf}
+	${Else}
+		StrCpy $R0 1
+		StrCpy $R1 0
+	${EndIf}
+	${Do}
+		${If} $R1 >= 1
+			${WordFind} "$R2" "${ORDERDELIMITER}" "-$R1" $R0
+		${EndIf}
+		ClearErrors
+		${ReadLauncherConfig} $ServiceName ${SERVICESECPRIF}$R0 Name
+		${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+		${ReadLauncherConfig} $ServiceOldImage ${SERVICESECPRIF}$R0 OldImage
+		${If} $ServiceOldImage != ""
+			ReadRegStr $0  HKLM "SYSTEM\CurrentControlSet\services\$ServiceName" ImagePath
+			${If} $0 != $ServiceOldImage
+				!insertmacro SERVICE "stop" "$ServiceName" ""
+				!insertmacro SERVICE "delete" "$ServiceName" ""
+				!insertmacro SERVICE "create" "$ServiceName" \
+				"path=$ServiceOldImage;depend=$ServiceDepend;user=$ServiceUser;\
+				display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+				; Pop $0
+				; MessageBox MB_OK "Create service code: $0"
+			${EndIf}
+		${Else}
+			${ReadLauncherConfig} $0 ${SERVICESECPRIF}$R0 RemoveFlag
+			${If} $0 == true
+				!insertmacro SERVICE "stop" "$ServiceName" ""
+				!insertmacro SERVICE "delete" "$ServiceName" ""
+			${Else}
+				!insertmacro SERVICE "stop" "$ServiceName" ""
+				!insertmacro SERVICE "config" "$ServiceName" "starttype=0x00000003;"
+				; Pop $0
+				; MessageBox MB_OK "$ServiceName/$0"
+			${EndIf}
+		${EndIf}
+		${If} $R1 >= 0
+			IntOp $R1 $R1 - 1
+		${EndIf}
+		IntOp $R0 $R0 + 1
+		; MessageBox MB_OK "$R0, $R1, $R2"
+	${LoopWhile} $R1 != 0
+${EndIf}
+SKIPUNSERVSEC:
+
+!macroend

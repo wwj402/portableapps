@@ -1,0 +1,608 @@
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "frontend\guiqt\appinfo.pyo", line 192, in load_package
+  File "frontend\guiqt\appinfo.pyo", line 272, in _fill
+TypeError: QComboBox.setEditText(QString): argument 1 has unexpected type 'int'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "frontend\guiqt\appinfo.pyo", line 192, in load_package
+  File "frontend\guiqt\appinfo.pyo", line 272, in _fill
+TypeError: QComboBox.setEditText(QString): argument 1 has unexpected type 'int'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "frontend\guiqt\appinfo.pyo", line 192, in load_package
+  File "frontend\guiqt\appinfo.pyo", line 272, in _fill
+TypeError: QComboBox.setEditText(QString): argument 1 has unexpected type 'int'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "frontend\guiqt\appinfo.pyo", line 192, in load_package
+  File "frontend\guiqt\appinfo.pyo", line 272, in _fill
+TypeError: QComboBox.setEditText(QString): argument 1 has unexpected type 'int'
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u2019' in position 412: ordinal not in range(128)
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u2019' in position 437: ordinal not in range(128)
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u2014' in position 258: ordinal not in range(128)
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 98, in on_installerButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/BaiduNetdiskPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:\SnapShot\PortableApps\WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:\SnapShot\PortableApps\WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:\SnapShot\PortableApps\WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:\SnapShot\PortableApps\WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/SnapShot/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 98, in on_installerButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00F\x00o\x00r\x00m\x00a\x00t\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00F\x00o\x00r\x00m\x00a\x00t\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 98, in on_installerButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00F\x00o\x00r\x00m\x00a\x00t\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+UnicodeEncodeError: 'ascii' codec can't encode character u'\u03bf' in position 119: ordinal not in range(128)
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 98, in on_installerButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 82, in on_validateButton_clicked
+  File "frontend\guiqt\validate.pyo", line 22, in __init__
+  File "frontend\guiqt\validate.pyo", line 30, in load_package
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/EmEditorPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00D\x00e\x00t\x00a\x00i\x00l\x00s\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\main.pyo", line 20, in decorate
+  File "frontend\guiqt\main.pyo", line 72, in on_detailsButton_clicked
+  File "paf\package.pyo", line 159, in __init__
+  File "paf\package.pyo", line 226, in validate
+  File "paf\appinfo.pyo", line 84, in load
+  File "iniparse\ini.pyo", line 471, in __init__
+  File "iniparse\ini.pyo", line 565, in _readfp
+ConfigParser.MissingSectionHeaderError: File contains no section headers.
+file: D:/PortableApps/WeChatPortable\App\AppInfo\appinfo.ini, line: 1
+'\xff\xfe[\x00F\x00o\x00r\x00m\x00a\x00t\x00]\x00\r\x00\n'
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+  File "iniparse\ini.pyo", line 520, in __str__
+  File "iniparse\ini.pyo", line 282, in __str__
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xd1 in position 77: ordinal not in range(128)
+Traceback (most recent call last):
+  File "frontend\guiqt\appinfo.pyo", line 22, in accept
+  File "frontend\guiqt\appinfo.pyo", line 197, in save
+  File "paf\appinfo.pyo", line 29, in decorate
+  File "paf\appinfo.pyo", line 370, in save
+  File "iniparse\ini.pyo", line 520, in __str__
+  File "iniparse\ini.pyo", line 282, in __str__
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xd1 in position 43: ordinal not in range(128)
