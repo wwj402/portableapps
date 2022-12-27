@@ -25,8 +25,8 @@ Var linksrcname
 !define MOVESEC "DirectoriesMove"
 !define FILESEC "FilesMove"
 !define FLAGFILE "sym_link.ini"
-!define LINKINIPATH "$EXEDIR\$BaseName_LinkStatus.ini"
-!define LINKOPTSEC "LinkStatus"
+!define LINKINIPATH "$EXEDIR\LinkStatus.ini"
+!define LINKOPTSEC "$BaseName"
 !define LINKINITEMP "$EXEDIR\$BaseName_LinkTemp.ini"
 !define SYBEXE "NTLinksMaker.exe"
 !define SYBEXE64 "NTLinksMaker64.exe"
@@ -84,15 +84,19 @@ Function "linklevel"
 	; ...
 
 	; Push $var    ; If $var="StopLocate" Then exit from function
-	${WordReplace} "$R9" "$R1" "$R2" "+1" $3
-	${GetFileAttributes} "$3" "REPARSE_POINT" $4
-	${If} $4 == 1
+	Push $R4
+	Push $R5
+	${WordReplace} "$R9" "$R1" "$R2" "+1" $R4
+	${GetFileAttributes} "$3" "REPARSE_POINT" $R5
+	${If} $R5 == 1
 		${If} $R6 == ""
-			RMDir "$3"
+			RMDir "$R4"
 		${Else}
-			Delete "$3"
+			Delete "$R4"
 		${EndIf}
 	${EndIf}
+	Pop $R5
+	Pop $R4
 	Push "continue"
 FunctionEnd
 

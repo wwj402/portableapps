@@ -122,28 +122,31 @@ FunctionEnd
 ${SegmentFile}
 
 !include "x64.nsh"
-!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\appinfo.ini" `AppID=` COMPILENAME
-!if "${COMPILENAME}" != ""
-	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${COMPILENAME}.ini" \
+!ifndef AppID
+!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\appinfo.ini" `AppID=` AppID
+!endif
+
+!if "${AppID}" != ""
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
 	`Service=` SERVICEINC
-	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${COMPILENAME}.ini" \
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
 	`Device=` DEVICEINC
-	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${COMPILENAME}.ini" \
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
 	`Regsvr32=` DLLINC
-	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${COMPILENAME}.ini" \
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
 	`Targetlink=` LINKINC
 !endif
-; !error "${COMPILENAME}||${SERVICEINC}||${DEVICEINC}||${DLLINC}"
-!if ${DEVICEINC} == "true"
+; !error "${AppID}||${SERVICEINC}||${DEVICEINC}||${DLLINC}||${LINKINC}"
+!if "${DEVICEINC}" == "true"
 	!include "Custom_device.nsh"
 !endif
-!if ${SERVICEINC} == "true"
+!if "${SERVICEINC}" == "true"
 	!include "Custom_service.nsh"
 !endif
-!if ${DLLINC} == "true"
+!if "${DLLINC}" == "true"
 	!include "Custom_dll.nsh"
 !endif
-!if ${LINKINC} == "true"
+!if "${LINKINC}" == "true"
 	!include "Custom_link.nsh"
 !endif
 ; !include "Custom_device.nsh"
@@ -172,7 +175,7 @@ ${SegmentInit}
 
 	${SetEnvironmentVariable} PORTABLEBASEDIR $EXEDIR
 	${SetEnvironmentVariable} PORTABLEBASENAME $BaseName
-	${SetEnvironmentVariable} PORTABLEEXEFILE $EXEFILE
+	${SetEnvironmentVariable} PORTABLEFILENAME $EXEFILE
 	SetShellVarContext all
 	${SetEnvironmentVariable} ALLUSERDOCUMENTS $DOCUMENTS
 	SetShellVarContext current
@@ -238,7 +241,7 @@ ${SegmentInit}
 			${EndIf}
 			${GetParent} "$EXEDIR\App\$0" $1
 			${SetEnvironmentVariable} ProgramDir $1
-			${SetEnvironmentVariable} ProgramName "$EXEDIR\App\$0"
+			${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 		${Else}
 		 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
 			${If} $0 == 64
@@ -253,7 +256,7 @@ ${SegmentInit}
 			ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
 			${GetParent} "$EXEDIR\App\$0" $1
 			${SetEnvironmentVariable} ProgramDir $1
-			${SetEnvironmentVariable} ProgramName "$EXEDIR\App\$0"
+			${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 		${EndIf}
 	${EndIf}
 	${If} $Bits == 32
@@ -272,7 +275,7 @@ ${SegmentInit}
 		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
 		${GetParent} "$EXEDIR\App\$0" $1
 		${SetEnvironmentVariable} ProgramDir $1
-		${SetEnvironmentVariable} ProgramName "$EXEDIR\App\$0"
+		${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 	${EndIf}
 
 	ClearErrors
@@ -293,6 +296,9 @@ ${SegmentInit}
 		WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch SinglePortableAppInstance $0
 	${EndIf}
 	!ifdef CUSTOM_DEVICE
+		Call SetOsArch
+	!endif
+	!ifdef CUSTOM_SERVICE
 		Call SetOsArch
 	!endif
 	!ifdef CUSTOM_LINK
@@ -329,7 +335,7 @@ ${SegmentPrePrimary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		Nop
+		nop
 	!endif
 !macroend
 

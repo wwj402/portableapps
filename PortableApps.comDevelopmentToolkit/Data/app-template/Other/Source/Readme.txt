@@ -1,3 +1,6 @@
+DEVELOPER: Replace occurrences of **AppID**Portable in this file with the
+App ID of your app and then remove this first sentence.
+
 The base application's source code is available from the portable app's
 homepage listed in the help.html file (if applicable).
 
@@ -8,7 +11,7 @@ LICENSE
 
 This package's installer and launcher are released under the GPL. The launcher
 is the PortableApps.com Launcher, available with full source and documentation
-from http://portableapps.com/development. We request that developers using the
+from https://portableapps.com/development. We request that developers using the
 PortableApps.com Launcher please leave this directory intact and unchanged.
 
 USER CONFIGURATION

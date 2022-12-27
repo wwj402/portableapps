@@ -1,0 +1,83 @@
+;This is an example installer.ini that is part of the PortableApps.com Template
+;It uses a standard Windows INI format, so any line starting with a semi-colon is treated as a comment
+;It is recommended that you use a coding text editor to edit this
+;If editing with Notepad++, be sure you have turned off the option to add a BOM as it will break the INI
+;
+;This file is not normally needed for the majority of apps.  We recommend including it for any apps that must have user settings moved to App when running and back to Data when closed.  That way, if Windows crashes/restarts or an unsafe eject is done and the user then upgrades the app without running it first so that the PA.c Launcher can clean up the data, no data is lost
+;
+;Full details on this file: https://portableapps.com/development/portableapps.com_format#installer
+[CheckRunning]
+CloseEXE=Custom.exe
+CloseName=AppName
+
+[Source]
+IncludeInstallerSource=false
+
+[MainDirectories]
+RemoveAppDirectory=true
+RemoveOtherDirectory=true
+
+[OptionalComponents]
+OptionalComponents=true
+MainSectionTitle=AppName Portable (English) [Required]
+MainSectionDescription=Install the portable app
+OptionalSectionTitle=Additional Languages
+OptionalSectionDescription=Add multilingual support for this app
+OptionalSectionSelectedInstallType=Multilingual
+OptionalSectionNotSelectedInstallType=English
+OptionalSectionPreSelectedIfNonEnglishInstall=true
+OptionalSectionInstalledWhenSilent=true
+OptionalDirectory1=
+OptionalFile1=
+
+[CopyLocalFiles]
+CopyLocalFiles=true
+CopyFromRegPath=HKLM\Software\AppName
+CopyFromRegKey=AppPath
+CopyFromRegRemoveDirectories=2
+CopyFromDirectory=%PROGRAMFILES%\AppName
+CopyToDirectory=App\AppName
+
+[DownloadFiles]
+AdditionalInstallSize=
+DownloadURL=
+DownloadKnockURL=
+DownloadName=
+DownloadFilename=
+DownloadMD5=
+DownloadTo=
+AdvancedExtract1To=
+AdvancedExtract1Filter=
+DoubleExtractFilename=
+DoubleExtract1To=
+DoubleExtract1Filter=
+Download2URL=
+Download2KnockURL=
+Download2Name=
+Download2Filename=
+Download2MD5=
+Download2To=
+Download2AdvancedExtract1To=
+Download2AdvancedExtract1Filter=
+Download2DoubleExtractFilename=
+Download2DoubleExtract1To=
+Download2DoubleExtract1Filter=
+CustomCodeUses7zip=
+
+[Languages]
+ENGLISH=true
+ENGLISHGB=true
+AFRIKAANS=true
+etc...
+
+[DirectoriesToPreserve]
+PreserveDirectory1=
+
+[DirectoriesToRemove]
+RemoveDirectory1=
+
+[FilesToPreserve]
+PreserveFile1=
+
+[FilesToRemove]
+RemoveFile1=

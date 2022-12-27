@@ -1,36 +1,52 @@
 ﻿${SegmentFile}
 
-; patch
 !define PATCHHOST "$EXEDIR\Data\Host"
 !define SYSTEMHOST "$SYSDIR\drivers\etc\hosts"
+!define SYSTEMHOSTICS "$SYSDIR\drivers\etc\hosts.ics"
 !define ATTRIBUTES "ARCHIVE|HIDDEN|OFFLINE|READONLY|SYSTEM|TEMPORARY"
 Var hostdata
+Var hostpath
 Var hostattributes
-; patch
 ; LangString HostMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
 ; LangString HostMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
-; patch
 
 /* ${Segment.onInit}
 	nop
 !macroend */
 
 ${SegmentInit}
-; patch
 	ClearErrors
 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "HostPath"
 	IfErrors 0 +2
 	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "HostPath" ""
 	ClearErrors
-	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "PatchHost"
-	IfErrors 0 +2
-	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "PatchHost" ""
-	${If} $0 == true
-		CopyFiles "${SYSTEMHOST}" "${SYSTEMHOST}.$BaseName"
-		${GetFileAttributes} "${SYSTEMHOST}" "ALL" $hostattributes
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "HostType"
+	IfErrors 0 +3
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "HostType" "|[no]/host/host.ics"
+	StrCpy $0 "|[no]/host/host.ics"
+	${WordFind} "$0" "|" "+1{" $0
+	${Select} $0
+	${Case} "host"
+		StrCpy $hostpath "${SYSTEMHOST}"
+	${Case} "host.ics"
+		StrCpy $hostpath "${SYSTEMHOSTICS}"	
+	${EndSelect}
+!macroend
+
+${SegmentPre}
+	${If} $hostpath != ""
+		${If} ${FileExists} "$hostpath"
+			CopyFiles "$hostpath" "$hostpath.$BaseName"
+		${Else}
+			FileOpen $1 "$hostpath" "a"
+			FileWrite $1 ""
+			FileClose $1
+		${EndIf}
+		${GetFileAttributes} "$hostpath" "ALL" $hostattributes
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "HostAttributes" "$hostattributes"
 		${If} $hostattributes != "NORMAL"
-			SetFileAttributes "${SYSTEMHOST}" NORMAL
+		${AndIf} $hostattributes != "ARCHIVE"
+			SetFileAttributes "$hostpath" NORMAL
 		${EndIf}
 		ClearErrors
 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "Host" "1"
@@ -43,9 +59,9 @@ ${SegmentInit}
 				${If} $hostdata != ""
 					${WordFind} "$hostdata" "." "#" $0
 					${If} $0 != $hostdata
-						${WordFind} "$hostdata" "+$0*}" "#" $1
-						${WordFind} "$hostdata" "+$0{{" "#" $2
-						${ConfigWrite} "${SYSTEMHOST}" "$2" "$1" $3
+						${WordFind} "$hostdata" "." "+$0*}" $1
+						${WordFind} "$hostdata" "." "+$0{{" $2
+						${ConfigWrite} "$hostpath" "$2" "$1" $3
 					${EndIf}
 				${EndIf}
 				IntOp $R0 $R0 + 1
@@ -68,21 +84,16 @@ ${SegmentInit}
 				${If} $hostdata != ""
 					${WordFind} "$hostdata" "." "#" $0
 					${If} $0 != $hostdata
-						${WordFind} "$hostdata" "+$0*}" "#" $1
-						${WordFind} "$hostdata" "+$0{{" "#" $2
-						${ConfigWrite} "${SYSTEMHOST}" "$2" "$1" $3
+						${WordFind} "$hostdata" "." "+$0*}" $1
+						${WordFind} "$hostdata" "." "+$0{{" $2
+						${ConfigWrite} "$hostpath" "$2" "$1" $3
 					${EndIf}
 				${EndIf}
 				IntOp $R0 $R0 + 1
 			${LoopUntil} $R0 > $1
 		${EndIf}
 	${EndIf}
-; patch
 !macroend
-
-/* ${SegmentPre}
-	nop
-!macroend */
 
 /* ${SegmentPrePrimary}
 	nop
@@ -169,14 +180,20 @@ ${SegmentInit}
 !macroend */
 
 ${SegmentPostPrimary}
-; patch
 	ClearErrors
 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "RestoreHost"
 	IfErrors 0 +2
-	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "RestoreHost" ""
-	ReadINIStr $1 "$EXEDIR\$BaseName.ini" "$BaseName" "PatchHost"
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "RestoreHost" "true"
+	ReadINIStr $1 "$EXEDIR\$BaseName.ini" "$BaseName" "HostType"
+	${WordFind} "$1" "|" "+1{" $1
+	${Select} $1
+	${Case} "host"
+		StrCpy $hostpath "${SYSTEMHOST}"
+	${Case} "host.ics"
+		StrCpy $hostpath "${SYSTEMHOSTICS}"	
+	${EndSelect}
 	${If} $0 != false
-	${AndIf} $1 == true
+	${AndIf} $hostpath != ""
 		ClearErrors
 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "Host" "1"
 		${IfNot} ${Errors}
@@ -189,8 +206,8 @@ ${SegmentPostPrimary}
 					${WordFind} "$hostdata" "." "#" $0
 					${If} $0 != $hostdata
 						; ${WordFind} "$hostdata" "+$0*}" "#" $1
-						${WordFind} "$hostdata" "+$0{{" "#" $2
-						${ConfigWrite} "${SYSTEMHOST}" "$2" "" $3
+						${WordFind} "$hostdata" "." "+$0{{" $2
+						${ConfigWrite} "$hostpath" "$2" "" $3
 					${EndIf}
 				${EndIf}
 				IntOp $R0 $R0 + 1
@@ -214,16 +231,16 @@ ${SegmentPostPrimary}
 					${WordFind} "$hostdata" "." "#" $0
 					${If} $0 != $hostdata
 						; ${WordFind} "$hostdata" "+$0*}" "#" $1
-						${WordFind} "$hostdata" "+$0{{" "#" $2
-						${ConfigWrite} "${SYSTEMHOST}" "$2" "" $3
+						${WordFind} "$hostdata" "." "+$0{{" $2
+						${ConfigWrite} "$hostpath" "$2" "" $3
 					${EndIf}
 				${EndIf}
 				IntOp $R0 $R0 + 1
 			${LoopUntil} $R0 > $1
 		${EndIf}
 	${EndIf}
-	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "PatchHost"
-	${If} $0 == true
+
+	${If} $hostpath != ""
 		ReadINIStr $1 "$EXEDIR\$BaseName.ini" "$BaseName" "HostAttributes"
 		${WordFind} "$1" "|" "#" $2
 		StrCpy $R0 "1"
@@ -231,36 +248,32 @@ ${SegmentPostPrimary}
 			${WordFind} "$1" "|" "+$R0" $3
 			${Select} $3
 			${Case} "ARCHIVE"
-				SetFileAttributes "${SYSTEMHOST}" ARCHIVE
+				SetFileAttributes "$hostpath" ARCHIVE
 			${Case} "HIDDEN"
-				SetFileAttributes "${SYSTEMHOST}" HIDDEN
+				SetFileAttributes "$hostpath" HIDDEN
 			${Case} "OFFLINE"
-				SetFileAttributes "${SYSTEMHOST}" OFFLINE
+				SetFileAttributes "$hostpath" OFFLINE
 			${Case} "READONLY"
-				SetFileAttributes "${SYSTEMHOST}" READONLY
+				SetFileAttributes "$hostpath" READONLY
 			${Case} "SYSTEM"
-				SetFileAttributes "${SYSTEMHOST}" SYSTEM
+				SetFileAttributes "$hostpath" SYSTEM
 			${Case} "TEMPORARY"
-				SetFileAttributes "${SYSTEMHOST}" TEMPORARY
+				SetFileAttributes "$hostpath" TEMPORARY
 			${EndSelect}
 			IntOp $R0 $R0 + 1
 		${LoopUntil} $R0 > $2
-		Delete "${SYSTEMHOST}.$BaseName"
+		Delete "$hostpath.$BaseName"
 	${EndIf}
-; patch
 !macroend
 
 /* ${SegmentPostSecondary}
-; !macro ${SegmentSpecial}_PostSecondary
 	Nop
 !macroend */
 
 /* ${SegmentPost}
-; !macro ${SegmentSpecial}_Post
 	Nop
 !macroend */
 
 /* ${SegmentUnload}
-; !macro ${SegmentSpecial}_Unload
 	Nop
 !macroend */

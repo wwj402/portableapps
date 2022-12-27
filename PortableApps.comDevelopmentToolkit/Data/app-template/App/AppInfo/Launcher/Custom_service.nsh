@@ -3,7 +3,7 @@
 !include servicelibnew.nsh
 
 !ifndef VERSION_NUM
-	!searchparse "${NSIS_VERSION}" "v" "VERSION_NUM"
+	!searchparse /noerrors "${NSIS_VERSION}" "v" "VERSION_NUM" "-"
 !endif
 
 !define CUSTOM_SERVICE 'yes'
@@ -34,6 +34,7 @@ Var ServiceInstallType
 Var ServInstallCmd
 Var ServUninstallCmd
 Var ServOprateCmd
+Var ServCmdType
 
 !ifndef LANGFLAG
 	LangString DirMessage1 1033 "Unable to get $0 default path, environment variable $0 not set."
@@ -99,7 +100,7 @@ FunctionEnd
 		Exch $0
 	FunctionEnd
 
-Function SetOsArch
+	Function SetOsArch
 		Push $0
 		Push $1
 		Push $2
@@ -189,7 +190,20 @@ Function SetOsArch
 	Function PathParse
 		Exch $0
 		Push $1
+		Push $2
+		Push $3
 		ExpandEnvStrings $0 "$0"
+		StrCpy $1 "$0" 1
+		StrCpy $2 ""
+		StrCpy $3 ""
+		StrCmp $1 "'" +3 0
+		StrCmp $1 "`" +2 0
+		StrCmp $1 '"' 0 SKIP_PP
+		${WordFind2x} $0 $1 $1 "+1" $2
+		${WordFind2x} $0 $1 $1 "+1}}" $3
+		SKIP_PP:
+		StrCmp $2 "" +2 0
+		StrCpy $0 "$2"
 		${GetRoot} "$0" $1
 		${if} $1 == ""
 			StrCpy $1 "$FunBaseDir" "" -1
@@ -199,15 +213,70 @@ Function SetOsArch
 				StrCpy $0 "$FunBaseDir\$0"
 			${EndIf}
 		${EndIf}
-		GetFullPathName $0 "$0"
+		; GetFullPathName $0 "$0"
 		StrCpy $1 "$0" "" -1
 		${If} $1 == "\"
 			StrCpy $0 "$0" -1
 		${EndIf}
+		; MessageBox MB_OK `$0||$2||$3`
+		StrCmp $2 "" +2 0
+		StrCpy $0 `"$0"$3`
+		Pop $3
+		Pop $2
 		Pop $1
 		Exch $0
 	FunctionEnd
 	!define FUNFLAG "Y"
+!endif
+
+!ifmacrondef GetCheckRunCmd
+!macro GetCheckRunCmd _SECTION _CMDSTRVAR _BASEDIRENV _CMDTPYEVAR
+	Push $1
+	Push $2
+	Push $3
+	${ReadLauncherConfig} $1 "${_SECTION}" "CmdDelimiter"
+	${GetOptions} '$1Cmd=${_CMDSTRVAR}' '$1Cmd=' $2
+	${If} ${_CMDSTRVAR} == $2
+		${WordFind2x} '$2' '"' '"' '+1' $2
+		${WordFind2x} "$2" "'" "'" "+1" $2
+		${If} ${_CMDSTRVAR} == $2
+			${WordReplace} "$2" "$\t" " " "+*" $2
+			${WordFind} "$2" " " "+1" $2
+		${EndIf}
+	${EndIf}
+	ReadEnvStr $FunBaseDir "${_BASEDIRENV}"
+	Push $2
+	call PathParse
+	Pop $3
+	${If} $3 != ""
+	${AndIf} ${FileExists} "$3"
+		${WordReplace} "${_CMDSTRVAR}" "$2" "$3" "+1" ${_CMDSTRVAR}
+	${Else}
+		${If} "${__FUNCTION__}" == "InstallService"
+		${OrIf} "${__FUNCTION__}" == "UnInstallService"
+			MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
+			StrCpy ${_CMDSTRVAR} ""
+		${Else}
+			MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
+			StrCpy ${_CMDSTRVAR} ""
+		${EndIf}
+	${EndIf}
+	; MessageBox MB_OK '$0||${_CMDSTRVAR}'
+	${If} ${_CMDSTRVAR} != ""
+		ExpandEnvStrings ${_CMDSTRVAR} "${_CMDSTRVAR}"
+		${Select} _CMDTPYEVAR
+		${Case} "execdos"
+			ExecDos::exec /DISABLEFSR '${_CMDSTRVAR}' '' ''
+		${Case} "execwait"
+			ExecWait '${_CMDSTRVAR}'
+		${CaseElse}
+			ExecDos::exec /DISABLEFSR '${_CMDSTRVAR}' '' ''
+		${EndSelect}
+	${EndIf}
+	Pop $3
+	Pop $2
+	Pop $1
+!macroend
 !endif
 
 Function InstallService
@@ -217,29 +286,30 @@ Function InstallService
 			${DisableX64FSRedirection}
 			SetRegView 64
 		${EndIf}
+		${ReadLauncherConfig} $ServCmdType "${SERVICECOMSEC}" "CmdType"
+		${WordFind} "$ServCmdType" "+" "+1{" $ServCmdType
 		${ReadLauncherConfig} $ServOprateCmd ${SERVICECOMSEC} ServInstallCmd
-		${If} $ServOprateCmd != ""
+		${If} $ServOprateCmd == "skip"
+			Goto SKIPSERVSEC
+		${ElseIf} $ServOprateCmd != ""
 		${AndIf} $ServOprateCmd != ${PLACEHOLDER}
-			${ReadLauncherConfig} $1 ${SERVICECOMSEC} CmdDelimiter
-			${GetOptions} '$1ServInstallCmd=$ServOprateCmd' '$1ServInstallCmd=' $2
-			ReadEnvStr $FunBaseDir ServiceDir
-			Push $2
-			call PathParse
-			Pop $3
-			${If} $3 != ""
-			${AndIf} ${FileExists} "$3"
-				${WordReplace} "$ServOprateCmd" "$2" "$3" "+1" $ServOprateCmd
-			${Else}
-				MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
-				StrCpy $ServOprateCmd ""
+			!insertmacro "GetCheckRunCmd" "${SERVICECOMSEC}" "$ServOprateCmd" "ServiceDir" "$ServCmdType"
+			Goto SKIPSERVSEC
+		${EndIf}
+		StrCpy $R0 "0"
+		${Do}
+			IntOp $R0 $R0 + 1
+			ClearErrors
+			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "ServInstallCmd$R0=" $ServOprateCmd
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${If} $ServOprateCmd == "skip"
+				Nop
+			${ElseIf} $ServOprateCmd != ""
+			${AndIf} $ServOprateCmd != ${PLACEHOLDER}
+				!insertmacro "GetCheckRunCmd" "${SERVICECOMSEC}" "$ServOprateCmd" "ServiceDir" "$ServCmdType"
 			${EndIf}
-			${If} $ServOprateCmd != ""
-				ExpandEnvStrings $ServOprateCmd "$ServOprateCmd"
-				; MessageBox MB_OK "$ServOprateCmd"
-				; ExecDos::exec '$ServOprateCmd' '' ''
-				; ExecDos::exec /DISABLEFSR '$ServOprateCmd' '' ''
-				ExecWait '$ServOprateCmd'
-			${EndIf}
+		${Loop}
+		${If} $R0 >= 2
 			Goto SKIPSERVSEC
 		${EndIf}
 		${ReadLauncherConfig} $R2 ${SERVICECOMSEC} ServInsOrder
@@ -275,28 +345,12 @@ Function InstallService
 				${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 				"${SERVCMDPRIF}$R0Install$R3=" $ServOprateCmd
 				${IfThen} ${Errors} ${|} ${ExitDo} ${|}
-				${If} $ServOprateCmd != ""
+				${If} $ServOprateCmd == "skip"
+					${Break}
+				${ElseIf} $ServOprateCmd != ""
 				${AndIf} $ServOprateCmd != ${PLACEHOLDER}
-					${ReadLauncherConfig} $1 ${SERVICESECPRIF}$R0 CmdDelimiter
-					${GetOptions} '$1Cmd=$ServOprateCmd' '$1Cmd=' $2
-					ReadEnvStr $FunBaseDir ServiceDir
-					Push $2
-					call PathParse
-					Pop $3
-					${If} $3 != ""
-					${AndIf} ${FileExists} "$3"
-						${WordReplace} "$ServOprateCmd" "$2" "$3" "+1" $ServOprateCmd
-					${Else}
-						MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
-						StrCpy $ServOprateCmd ""
-					${EndIf}
-					${If} $ServOprateCmd != ""
-						ExpandEnvStrings $ServOprateCmd "$ServOprateCmd"
-						; MessageBox MB_OK "$ServOprateCmd"
-						; ExecDos::exec '$ServOprateCmd' '' ''
-						; ExecDos::exec /DISABLEFSR '$ServOprateCmd' '' ''
-						ExecWait '$ServOprateCmd'
-					${EndIf}
+					!insertmacro "GetCheckRunCmd" "${SERVICESECPRIF}$R0" \
+							"$ServOprateCmd" "ServiceDir" "$ServCmdType"
 				${EndIf}
 				IntOp $R3 $R3 + 1
 			${Loop}
@@ -313,6 +367,7 @@ Function InstallService
 				${ReadLauncherConfig} $ServiceDepend ${SERVICESECPRIF}$R0 Dependencies
 				${ReadLauncherConfig} $ServiceUser ${SERVICESECPRIF}$R0 User
 				${ReadLauncherConfig} $ServiceInstallType ${SERVICESECPRIF}$R0 InstallType
+				${WordFind} "$ServiceInstallType" "/" "+1{" $ServiceInstallType
 				StrCmp $ServiceDisplay ${PLACEHOLDER} 0 +2
 				StrCpy $ServiceDisplay ""
 				StrCmp $ServiceServiceType ${PLACEHOLDER} 0 +2
@@ -336,12 +391,12 @@ Function InstallService
 					${Select} $ServiceInstallType
 					${Case} "cmd"
 						ExecDos::exec /TOSTACK 'sc.exe create $ServiceName \
-						binPath= "$ServiceImage" type= $ServiceServiceType start= $ServiceStartType \
+						binPath= $ServiceImage type= $ServiceServiceType start= $ServiceStartType \
 						DisplayName= $ServiceDisplay obj= $ServiceUser depend= $ServiceDepend' '' ''
 					${CaseElse}
 						!insertmacro SERVICE "create" "$ServiceName" \
-						"path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
-						display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+						`path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
+						display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;`
 					${EndSelect}
 					; Pop $0
 					; MessageBox MB_OK "Create service code: $0"
@@ -361,38 +416,72 @@ Function InstallService
 							ExecDos::exec /TOSTACK 'sc.exe stop $ServiceName' '' ''
 							ExecDos::exec /TOSTACK 'sc.exe delete $ServiceName' '' ''
 							ExecDos::exec /TOSTACK 'sc.exe create $ServiceName \
-							binPath= "$ServiceImage" type= $ServiceServiceType start= $ServiceStartType \
+							binPath= $ServiceImage type= $ServiceServiceType start= $ServiceStartType \
 							DisplayName= $ServiceDisplay obj= $ServiceUser depend= $ServiceDepend' '' ''
 						${CaseElse}
 							!insertmacro SERVICE "stop" "$ServiceName" ""
 							!insertmacro SERVICE "delete" "$ServiceName" ""
 							!insertmacro SERVICE "create" "$ServiceName" \
-							"path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
-							display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+							`path=$ServiceImage;depend=$ServiceDepend;user=$ServiceUser;\
+							display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;`
 						${EndSelect}
 						; Pop $0
 						; MessageBox MB_OK "Create service code: $0"
-						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage "$ServiceOldImage"
+						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
+							${SERVICESECPRIF}$R0 OldImage "$ServiceOldImage"
 						Goto ServiceYes
 						ServiceNo:
-						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage "ServiceOldImage"
+						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
+							${SERVICESECPRIF}$R0 OldImage "ServiceOldImage"
 						ServiceYes:
 					${Else}
 						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" ${SERVICESECPRIF}$R0 OldImage ""
 					${EndIf}
 				${EndIf}
-				!insertmacro SERVICE "running" "$ServiceName" ""
-				Pop $0
-				${IfThen} $0 == false ${|} !insertmacro SERVICE "start" "$ServiceName" "" ${|}
-				; Pop $0
-				; MessageBox MB_OK "Start service $ServiceName code: $0"
+				${Switch} $ServiceStartType
+				${Case} "0x00000000"
+				${Case} "0x00000001"
+				${Case} "0x00000002"
+					!insertmacro SERVICE "running" "$ServiceName" ""
+					Pop $0
+					${IfThen} $0 == false ${|} !insertmacro SERVICE "start" "$ServiceName" "" ${|}
+					; Pop $0
+					; MessageBox MB_OK "Start service $ServiceName code: $0"
+				${EndSwitch}
 			${EndIf}
+			StrCpy $R3 1
+			${Do}
+				ClearErrors
+				${ReadLauncherConfig} $0 "${SERVICESECPRIF}$R0" "RegAdd$R3"
+				${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+				${If} $0 != ""
+				${AndIf} $0 != ${PLACEHOLDER}
+					StrCpy $1 "$0" 1
+					StrCmp $1 "'" +4 0
+					StrCmp $1 "`" +3 0
+					StrCmp $1 '"' +2 0
+					StrCpy $1 " "
+					${WordReplace} "$0" "$\t" " " "+*" $2
+					${If} $1 == " "
+						${WordFind} "$2" " " "+1{" $2
+					${Else}
+						${WordFind2x} "$2" "$1" "$1" "+1" $2
+					${EndIf}
+					${Registry::CreateKey} "$2" $3
+					${If} $3 == "0"
+						registry::_Write /NOUNLOAD `$0`
+						Pop $3
+					${EndIf}
+				${EndIf}
+				IntOp $R3 $R3 + 1
+			${Loop}
 			${If} $R1 >= 0
 				IntOp $R1 $R1 - 1
 			${EndIf}
 			IntOp $R0 $R0 + 1
 			; MessageBox MB_OK "$R0, $R1, $R2"
 		${LoopWhile} $R1 != 0
+		SKIPSERVSEC:
 		${If} $X64FSRFlag == "disable"
 			${DisableX64FSRedirection}
 		${Else}
@@ -405,7 +494,6 @@ Function InstallService
 			SetRegView 32
 		${EndIf}
 	${EndIf}
-	SKIPSERVSEC:
 FunctionEnd
 
 Function UnInstallService
@@ -416,28 +504,27 @@ Function UnInstallService
 			SetRegView 64
 		${EndIf}
 		${ReadLauncherConfig} $ServOprateCmd ${SERVICECOMSEC} ServUninstallCmd
-		${If} $ServOprateCmd != ""
+		${If} $ServOprateCmd == "skip"
+			Goto SKIPUNSERVSEC
+		${ElseIf} $ServOprateCmd != ""
 		${AndIf} $ServOprateCmd != ${PLACEHOLDER}
-			${ReadLauncherConfig} $1 ${SERVICECOMSEC} CmdDelimiter
-			${GetOptions} '$0ServUninstallCmd=$ServOprateCmd' '$0ServUninstallCmd=' $2
-			ReadEnvStr $FunBaseDir ServiceDir
-			Push $2
-			call PathParse
-			Pop $3
-			${If} $3 != ""
-					${AndIf} ${FileExists} "$3"
-						${WordReplace} "$ServOprateCmd" "$2" "$3" "+1" $ServOprateCmd
-					${Else}
-						MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
-						StrCpy $ServOprateCmd ""
-					${EndIf}
-					${If} $ServOprateCmd != ""
-						ExpandEnvStrings $ServOprateCmd "$ServOprateCmd"
-						MessageBox MB_OK "$ServOprateCmd"
-						; ExecDos::exec '$ServOprateCmd' '' ''
-						; ExecDos::exec /DISABLEFSR '$ServOprateCmd' '' ''
-						ExecWait '$ServOprateCmd'
-					${EndIf}
+			!insertmacro "GetCheckRunCmd" "${SERVICECOMSEC}" "$ServOprateCmd" "ServiceDir" "$ServCmdType"
+			Goto SKIPUNSERVSEC
+		${EndIf}
+		StrCpy $R0 "0"
+		${Do}
+			IntOp $R0 $R0 + 1
+			ClearErrors
+			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "ServUninstallCmd$R0=" $ServOprateCmd
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${If} $ServOprateCmd == "skip"
+				Nop
+			${ElseIf} $ServOprateCmd != ""
+			${AndIf} $ServOprateCmd != ${PLACEHOLDER}
+				!insertmacro "GetCheckRunCmd" "${SERVICECOMSEC}" "$ServOprateCmd" "ServiceDir" "$ServCmdType"
+			${EndIf}
+		${Loop}
+		${If} $R0 >= 2
 			Goto SKIPUNSERVSEC
 		${EndIf}
 		${ReadLauncherConfig} $R2 ${SERVICECOMSEC} ServUninsOrder
@@ -460,6 +547,7 @@ Function UnInstallService
 			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
 			${ReadLauncherConfig} $ServiceOldImage ${SERVICESECPRIF}$R0 OldImage
 			${ReadLauncherConfig} $ServiceInstallType ${SERVICESECPRIF}$R0 InstallType
+			${WordFind} "$ServiceInstallType" "/" "+1{" $ServiceInstallType
 			${If} $ServiceOldImage != ""
 			${AndIf} $ServiceOldImage != ${PLACEHOLDER}
 				ReadRegStr $0 HKLM "SYSTEM\CurrentControlSet\services\$ServiceName" ImagePath
@@ -482,14 +570,14 @@ Function UnInstallService
 						ExecDos::exec /TOSTACK 'sc.exe stop $ServiceName' '' ''
 						ExecDos::exec /TOSTACK 'sc.exe delete $ServiceName' '' ''
 						ExecDos::exec /TOSTACK 'sc.exe create $ServiceName \
-						binPath= "$ServiceOldImage" type= $ServiceServiceType start= $ServiceStartType \
+						binPath= $ServiceOldImage type= $ServiceServiceType start= $ServiceStartType \
 						DisplayName= $ServiceDisplay obj= $ServiceUser depend= $ServiceDepend' '' ''
 					${CaseElse}
 						!insertmacro SERVICE "stop" "$ServiceName" ""
 						!insertmacro SERVICE "delete" "$ServiceName" ""
 						!insertmacro SERVICE "create" "$ServiceName" \
-						"path=$ServiceOldImage;depend=$ServiceDepend;user=$ServiceUser;\
-						display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;"
+						`path=$ServiceOldImage;depend=$ServiceDepend;user=$ServiceUser;\
+						display=$ServiceDisplay;starttype=$ServiceStartType;servicetype=$ServiceServiceType;`
 					${EndSelect}
 					; Pop $0
 					; MessageBox MB_OK "Create service code: $0"
@@ -504,28 +592,12 @@ Function UnInstallService
 						${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 						"${SERVCMDPRIF}$R0UnInstall$R3=" $ServOprateCmd
 						${IfThen} ${Errors} ${|} ${ExitDo} ${|}
-						${If} $ServOprateCmd != ""
+						${If} $ServOprateCmd == "skip"
+							${Break}
+						${ElseIf} $ServOprateCmd != ""
 						${AndIf} $ServOprateCmd != ${PLACEHOLDER}
-							${ReadLauncherConfig} $1 ${SERVICESECPRIF}$R0 CmdDelimiter
-							${GetOptions} '$1Cmd=$ServOprateCmd' '$1Cmd=' $2
-							ReadEnvStr $FunBaseDir ServiceDir
-							Push $2
-							call PathParse
-							Pop $3
-							${If} $3 != ""
-							${AndIf} ${FileExists} "$3"
-								${WordReplace} "$ServOprateCmd" "$2" "$3" "+1" $ServOprateCmd
-							${Else}
-								MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
-								StrCpy $ServOprateCmd ""
-							${EndIf}
-							${If} $ServOprateCmd != ""
-								ExpandEnvStrings $ServOprateCmd "$ServOprateCmd"
-								; MessageBox MB_OK "$ServOprateCmd"
-								; ExecDos::exec '$ServOprateCmd' '' ''
-								; ExecDos::exec /DISABLEFSR '$ServOprateCmd' '' ''
-								ExecWait '$ServOprateCmd'
-							${EndIf}
+							!insertmacro "GetCheckRunCmd" "${SERVICESECPRIF}$R0" \
+									"$ServOprateCmd" "ServiceDir" "$ServCmdType"
 						${EndIf}
 						IntOp $R3 $R3 + 1
 					${Loop}
@@ -541,6 +613,21 @@ Function UnInstallService
 							!insertmacro SERVICE "delete" "$ServiceName" ""
 						${EndSelect}
 					${EndIf}
+					StrCpy $R3 1
+					${Do}
+						ClearErrors
+						${ReadLauncherConfig} $0 ${SERVICESECPRIF}$R0 ServFileDel$R3
+						${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+						${If} $0 != ""
+						${AndIf} $0 != ${PLACEHOLDER}
+							Push $0
+							call PathParse
+							Pop $0
+							IfFileExists "$0" 0 +2
+							Delete /REBOOTOK "$0"
+						${EndIf}
+						IntOp $R3 $R3 + 1
+					${Loop}
 				${Else}
 					${Select} $ServiceInstallType
 					${Case} "cmd"
@@ -560,6 +647,7 @@ Function UnInstallService
 			IntOp $R0 $R0 + 1
 			; MessageBox MB_OK "$R0, $R1, $R2"
 		${LoopWhile} $R1 != 0
+		SKIPUNSERVSEC:
 		${If} $X64FSRFlag == "disable"
 			${DisableX64FSRedirection}
 		${Else}
@@ -572,5 +660,4 @@ Function UnInstallService
 			SetRegView 32
 		${EndIf}
 	${EndIf}
-	SKIPUNSERVSEC:
 FunctionEnd

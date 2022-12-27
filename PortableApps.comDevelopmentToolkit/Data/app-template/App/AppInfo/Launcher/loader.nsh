@@ -1,11 +1,19 @@
 ﻿${SegmentFile}
 
-!define LOADERDIR "$EXEDIR\Data\Loader"
-!define LOADER "Loader.exe"
+!define LOADERFLAG "|[no]/copy/link/nokeep"
+!define LOADERDIR "loader"
+!define LOADER "loader.exe"
+!ifndef LINKEXE
+!define LINKEXE "NTLinksMaker\NTLinksMaker.exe|NTLinksMaker32.exe/NTLinksMaker64.exe"
+!define LINKPARA `/q /n /b /sr? "{<src_file>|@<src_list_utf16>}" "<dst_path>"`
+!endif
 Var loaderpath
 Var loaderpathto
 Var loaderflag
+Var loaderlast
 Var loaderwait
+Var linkexe
+Var linkpara
 
 ; LangString LoaderMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
 ; LangString LoaderMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
@@ -27,7 +35,7 @@ Var strtemp
 !macroend
 !endif
 
-Function "loadercopy"
+Function "loaderadd"
 	; $R9    "path\name"
 	; $R8    "path"
 	; $R7    "name"
@@ -43,22 +51,29 @@ Function "loadercopy"
 	${If} $R6 != ""
 		${WordReplace} "$R9" "$loaderpath" "$loaderpathto" "+1" $R0
 		; MessageBox MB_OK "$R0"
-		ClearErrors
 		${If} ${FileExists} "$R0"
 			md5dll::GetMD5File "$R9"
 			Pop $R1
 			md5dll::GetMD5File "$R0"
 			Pop $R2
 		${EndIf}
-		${If} ${FileExists} "$R0"
-			StrCmp $R1 $R2 +2 0
+		IfFileExists "$R0" 0 +2
+		StrCmp $R1 $R2 SKIP 0
+		${Switch} $loaderflag
+		${Case} "copy"
+		${Case} "nokeep"
 			CopyFiles "$R9" "$R0"
-		${Else}
-			CopyFiles "$R9" "$R0"
-		${EndIf}
-		IfErrors 0 +2
-		StrCpy $loaderflag "loadererror"
+			${Break}
+		${Case} "link"
+			${WordReplace} $linkpara "{<src_file>|@<src_list_utf16>}" "$R9" "+" $linkpara
+			${WordReplace} $linkpara "<dst_path>" "$R0" "+" $linkpara
+			ExecDos::exec '"$linkexe" $linkpara' "" ""
+			Pop $R2
+			StrCmp $R2 "0" +2 0
+			SetErrors
+		${EndSwitch}
 	${EndIf}
+	SKIP:
 	Pop $R2
 	Pop $R1
 	Pop $R0
@@ -77,22 +92,44 @@ Function "loaderremove"
 	; Push $var    ; If $var="StopLocate" Then exit from function
 	Push $R0
 	${If} $R6 != ""
-		ClearErrors
 		${WordReplace} "$R9" "$loaderpath" "$loaderpathto" "+1" $R0
 		${If} ${FileExists} "$R0"
 			Delete "$R0"
 		${EndIf}
-		IfErrors 0 +2
-		StrCpy $loaderflag "removeerror"
 	${EndIf}
 	Pop $R0
 	Push "continue"
 FunctionEnd
 
+; Function .onInit          ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} Temp
+; 	${RunSegment} Language
+; 	${RunSegment} OperatingSystem
+; 	${RunSegment} RunAsAdmin
+; FunctionEnd
 /* ${Segment.onInit}
 	nop
 !macroend */
 
+; Function Init             ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} PathChecks
+; 	${RunSegment} Settings
+; 	${RunSegment} DriveLetter
+; 	${RunSegment} DirectoryMoving
+; 	${RunSegment} Variables
+; 	${RunSegment} Language
+; 	${RunSegment} Registry
+; 	${RunSegment} Java
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} InstanceManagement
+; 	${RunSegment} SplashScreen
+; 	${RunSegment} RefreshShellIcons
+; FunctionEnd
 ${SegmentInit}
 	ClearErrors
 	ReadINIStr $loaderpath "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderDir"
@@ -107,8 +144,75 @@ ${SegmentInit}
 	ClearErrors
 	ReadINIStr $strtemp "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag"
 	IfErrors 0 +3
-	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag" "|64/32/no/nokeep"
-	StrCpy $strtemp "|64/32/no/nokeep"
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag" "${LOADERFLAG}"
+	StrCpy $strtemp "${LOADERFLAG}"
+	ClearErrors
+	ReadINIStr $loaderlast "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderLast"
+	IfErrors 0 +2
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderLast" ""
+	ClearErrors
+	ReadINIStr $linkexe "$EXEDIR\$BaseName.ini" "$BaseName" "LinkExe"
+	IfErrors 0 +3
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LinkExe" "${LINKEXE}"
+	StrCpy $linkexe "${LINKEXE}"
+	ClearErrors
+	ReadINIStr $linkexe "$EXEDIR\$BaseName.ini" "$BaseName" "LinkPara"
+	IfErrors 0 +3
+	WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LinkPara" `${LINKPARA}`
+	StrCpy $linkpara `${LINKPARA}`
+	${WordFind} $linkexe "|" "+1{" $0
+	${If} $0 != ""
+		${WordFind} $linkexe "|" "+1}" $1
+		${If} $1 != ""
+			${WordFind} $1 "/" "#" $2
+			${Select} $2
+			${Case} "2"
+				${WordFind} $1 "/" "+1{" $3
+				${WordFind} $1 "/" "+1}" $4
+				!insertmacro "path_canonicalize" "$EXEDIR\Data" "$0"
+				${GetParent} "$0" $2
+				${IfNot} ${FileExists} "$0"
+				${AndIf} ${RunningX64}
+				${AndIf} ${FileExists} "$2\$4"
+					Rename "$2\$4" "$0"
+				${ElseIfNot} ${FileExists} "$0"
+				${AndIfNot} ${RunningX64}
+				${AndIf} ${FileExists} "$2\$3"
+					Rename "$2\$3" "$0"
+				${ElseIf} ${FileExists} "$0"
+				${AndIf} ${RunningX64}
+				${AndIf} ${FileExists} "$2\$4"
+				${AndIfNot} ${FileExists} "$2\$3"
+					Rename "$0" "$2\$3"
+					Rename "$2\$4" "$0"
+				${ElseIf} ${FileExists} "$0"
+				${AndIfNot} ${RunningX64}
+				${AndIf} ${FileExists} "$2\$3"
+				${AndIfNot} ${FileExists} "$2\$4"
+					Rename "$0" "$2\$4"
+					Rename "$2\$3" "$0"
+				${ElseIf} ${FileExists} "$0"
+				${AndIf} ${FileExists} "$2\$3"
+				${AndIf} ${FileExists} "$2\$4"
+					Delete "$0"
+					${If} ${RunningX64}
+						Rename "$2\$4" "$0"
+					${Else}
+						Rename "$2\$3" "$0"
+					${EndIf}
+				${EndIf}
+			${Case} "1"
+				${WordFind} $1 "/" "+1{" $3
+				!insertmacro "path_canonicalize" "$EXEDIR\Data" "$0"
+				${GetParent} "$0" $2
+				${IfNot} ${FileExists} "$0"
+				${AndIf} ${FileExists} "$2\$3"
+					Rename "$2\$" "$0"
+				${EndIf}
+			${EndSelect}
+		${EndIf}
+	${EndIf}
+	StrCpy $linkexe "$0"
 	ClearErrors
 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "Loader"
 	IfErrors 0 +3
@@ -119,40 +223,75 @@ ${SegmentInit}
 		${WordFind} "$strtemp" "|" "#" $0
 		${Select} $0
 		${Case} 2
-			${WordFind} "$strtemp" "|" "+1" $1
-			${WordFind} "$strtemp" "|" "-1" $2
+			${WordFind} "$strtemp" "|" "+1" $loaderflag
+			${WordFind} "$strtemp" "|" "-1" $1
 		${Case} 1
-			${WordFind} "$strtemp" "|" "+1{" $1
-			${WordFind} "$strtemp" "|" "+1}" $2
-			${If} $2 == ""
-				StrCpy $2 "64/32/no/nokeep"
-			${EndIf}
+			${WordFind} "$strtemp" "|" "+1{" $loaderflag
+			${WordFind} "$strtemp" "|" "+1}" $1
 		${Case} $strtemp
-			StrCpy $1 $0
-			StrCpy $2 "64/32/no/nokeep"
+			StrCpy $loaderflag $0
+			StrCpy $1 ""
 		${EndSelect}
-		${If} $1 != "no"
-		${AndIf} $1 != $Bits
+		${If} $1 == ""
+			StrCpy $1 "${LOADERFLAG}" "" 1
+			WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag" "$loaderflag|$1"
+		${EndIf}
+		ReadINIStr $loaderlast "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderLast"
+	${EndIf}
+!macroend
+
+; Function Pre              ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} Environment
+; 	${RunSegment} ExecString
+; FunctionEnd
+${SegmentPre}
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "Loader"
+	${If} ${FileExists} "$loaderpath\$0"
+		${Switch} $loaderflag
+		${Case} ""
+		${Case} "no"
+			${Break}
+		${Case} "nokeep"
+			IfFileExists "$loaderpath\loaded" 0 +2
+			Delete "$loaderpath\loaded"
+		${Case} "copy"
+		${Case} "link"
 			ReadEnvStr $loaderpathto "ProgramDir"
-			${Locate} "$loaderpath" "/L=FD /G=1" "loadercopy"
-			${If} $loaderflag != "loadererror"
-			${AndIf} $1 != "nokeep"
-				WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag" "$Bits|$2"
+			ClearErrors
+			${If} $loaderpath == $loaderlast
+			${AndIfNot} ${FileExists} "$loaderpath\loaded"
+			${OrIf} $loaderpath != $loaderlast
+				${Locate} "$loaderpath" "/L=FD /G=1" "loaderadd"
 			${EndIf}
-			ReadINIStr $3 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64"
-			${If} $Bits == 64
-			${AndIf} $3 != ""
-				${GetFileName} "$3" $loaderwait
+			${If} ${Errors}
+				WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderLast" "$loaderpath|error"
 			${Else}
-				ReadINIStr $3 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable"
-				${GetFileName} "$3" $loaderwait
+				WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderLast" "$loaderpath"
+			${EndIf}
+			${IfNot} ${Errors}
+			${AndIfNot} $loaderflag == "nokeep"
+			${AndIfNot} ${FileExists} "$loaderpath\loaded"
+				FileOpen $0 "$loaderpath\loaded" w
+				FileWrite $0 ""
+				FileClose $0
+			${EndIf}
+			ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64"
+			${If} $Bits == 64
+			${AndIf} $0 != ""
+				${GetFileName} "$0" $loaderwait
+			${Else}
+				ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable"
+				${GetFileName} "$0" $loaderwait
 			${EndIf}
 			StrCpy $0 "1"
 			${Do}
 				ClearErrors
-				ReadINIStr $3 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "WaitForEXE$0"
+				ReadINIStr $1 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "WaitForEXE$0"
 				${IfThen} ${Errors} ${|} ${ExitDo} ${|}
-				${If} $3 == $loaderwait
+				${If} $1 == $loaderwait
 					StrCpy $loaderwait ""
 					${ExitDo}
 				${EndIf}
@@ -161,54 +300,84 @@ ${SegmentInit}
 			${If} $loaderwait != ""
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "WaitForEXE$0" "$loaderwait"
 			${EndIf}
-		${EndIf}
+		${EndSwitch}
 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "Loader"
-		ReadINIStr $3 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64"
-		${If} $1 != "no"
+		ReadINIStr $1 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64"
+		${If} $loaderflag != "no"
+		${AndIf} $loaderflag != ""
 		${AndIf} $Bits == 64
-		${AndIf} $3 != ""
-			${GetParent} "$3" $2
+		${AndIf} $1 != ""
+			${GetParent} "$1" $2
 			${If} $2 != ""
 				StrCpy $0 "$2\$0"
 			${EndIf}
 			${If} ${FileExists} "$EXEDIR\App\$0"
-				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable64=" "$3" $2
-				WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" "ProgramExecutable64" "$0"
+				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable64=" "$1" $2
+				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64" "$0"
 			${EndIf}
-		${ElseIf} $1 != "no"
-			ReadINIStr $3 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable"
-			${GetParent} "$3" $2
+		${ElseIf} $loaderflag != "no"
+		${AndIf} $loaderflag != ""
+			ReadINIStr $1 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable"
+			${GetParent} "$1" $2
 			${If} $2 != ""
 				StrCpy $0 "$2\$0"
 			${EndIf}
 			${If} ${FileExists} "$EXEDIR\App\$0"
-				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable=" "$3" $2
+				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable=" "$1" $2
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable" "$0"
 			${EndIf}
 		${EndIf}
 	${EndIf}
 !macroend
 
-/* ${SegmentPre}
-	nop
-!macroend */
-
+; Function PrePrimary       ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} DriveLetter
+; 	${RunSegment} Variables
+; 	${RunSegment} DirectoryMoving
+; 	${RunSegment} FileWrite
+; 	${RunSegment} FilesMove
+; 	${RunSegment} DirectoriesMove
+; 	;${RunSegment} RegisterDLL
+; 	${RunSegment} RegistryKeys
+; 	${RunSegment} RegistryValueBackupDelete
+; 	${RunSegment} RegistryValueWrite
+; 	${RunSegment} Services
+; FunctionEnd
 /* ${SegmentPrePrimary}
 	nop
 !macroend */
 
+; Function PreSecondary     ;{{{1
+; 	${RunSegment} Custom
+; 	;${RunSegment} *
+; FunctionEnd
 /* ${SegmentPreSecondary}
 	nop
 !macroend */
 
+; Function PreExec          ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} RefreshShellIcons
+; 	${RunSegment} WorkingDirectory
+; FunctionEnd
 /* ${SegmentPreExec}
 	nop
 !macroend */
 
+; Function PreExecPrimary   ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} SplashScreen
+; FunctionEnd
 /* ${SegmentPreExecPrimary}
 	Nop
 !macroend */
 
+; Function PreExecSecondary ;{{{1
+; 	${RunSegment} Custom
+; 	;${RunSegment} *
+; FunctionEnd
 /* ${SegmentPreExecSecondary}
 	Nop
 !macroend */
@@ -277,29 +446,39 @@ ${SegmentInit}
 
 !macroend */
 
+; Function PostPrimary      ;{{{1
+; 	${RunSegment} Services
+; 	${RunSegment} RegistryValueBackupDelete
+; 	${RunSegment} RegistryKeys
+; 	${RunSegment} RegistryCleanup
+; 	;${RunSegment} RegisterDLL
+; 	${RunSegment} Qt
+; 	${RunSegment} DirectoriesMove
+; 	${RunSegment} FilesMove
+; 	${RunSegment} DirectoriesCleanup
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} Custom
+; FunctionEnd
 ${SegmentPostPrimary}
-	ReadINIStr $loaderpath "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderDir"
-	!insertmacro "path_canonicalize" "$EXEDIR\Data" "$loaderpath"
-	IfFileExists "$loaderpath\$Bits\*.*" 0 +2
-	StrCpy $loaderpath "$loaderpath\$Bits"
 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "Loader"
 	${If} $0 != ""
 	${AndIf} ${FileExists} "$loaderpath\$0"
-		ReadINIStr $strtemp "$EXEDIR\$BaseName.ini" "$BaseName" "LoaderFlag"
-		${WordFind} "$strtemp" "|" "+1" $1
-		${If} $1 == "nokeep"
+		${If} $loaderflag == "nokeep"
 			ReadEnvStr $loaderpathto "ProgramDir"
 			${Locate} "$loaderpath" "/L=FD /G=1" "loaderremove"
 		${EndIf}
 		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64"
-		${If} $1 != "no"
+		${If} $loaderflag != "no"
+		${AndIf} $loaderflag != ""
 		${AndIf} $Bits == 64
 		${AndIf} $0 != ""
 			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable64=" $0
 			${If} $0 != ""
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64" "$0"
 			${EndIf}
-		${ElseIf} $1 != "no"
+		${ElseIf} $loaderflag != "no"
+		${AndIf} $loaderflag != ""
 			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable=" $0
 			${If} $0 != ""
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable" "$0"
@@ -308,17 +487,29 @@ ${SegmentPostPrimary}
 	${EndIf}
 !macroend
 
+; Function PostSecondary    ;{{{1
+; 	;${RunSegment} *
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentPostSecondary}
-; !macro ${SegmentSpecial}_PostSecondary
 	Nop
 !macroend */
 
+; Function Post             ;{{{1
+; 	${RunSegment} RefreshShellIcons
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentPost}
-; !macro ${SegmentSpecial}_Post
 	Nop
 !macroend */
 
+; Function Unload           ;{{{1
+; 	${RunSegment} XML
+; 	${RunSegment} Registry
+; 	${RunSegment} SplashScreen
+; 	${RunSegment} Core
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentUnload}
-; !macro ${SegmentSpecial}_Unload
 	Nop
 !macroend */

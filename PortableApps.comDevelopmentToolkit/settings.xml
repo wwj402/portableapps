@@ -4,27 +4,12 @@
   <LauncherGenerator>D:\PortableApps\PortableApps.comLauncher\PortableApps.comLauncherGenerator.exe</LauncherGenerator>
   <ProjectsDirectory>D:\PortableApps_p</ProjectsDirectory>
   <history>
-    <project name="ComfortKeys" id="ComfortKeysPortable" installDirectoryName="ComfortKeys" path="D:\PortableApps_p\ComfortKeysPortable" />
-    <project name="RegexBuddy" id="RegexBuddyPortable" installDirectoryName="RegexBuddy" path="D:\PortableApps_p\RegexBuddyPortable" />
-    <project name="Sisulizer" id="SisulizerPortable" installDirectoryName="Sisulizer" path="D:\PortableApps_p\SisulizerPortable" />
-    <project name="Douyin" id="DouyinPortable" installDirectoryName="Douyin" path="D:\PortableApps\DouyinPortable" />
-    <project name="EdrawMind" id="EdrawMindPortable" installDirectoryName="EdrawMind" path="D:\PortableApps_p\EdrawMindPortable" />
-    <project name="VirtualSerialPortDriver" id="VirtualSerialPortDriverPortable" installDirectoryName="VirtualSerialPortDriver" path="D:\PortableApps_p\VirtualSerialPortDriverPortable" />
-    <project name="ShadowSocksR" id="ShadowSocksRPortable" installDirectoryName="ShadowSocksR" path="D:\APPs\Tools\ShadowSocksRPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="MindManager" id="MindManagerPortable" installDirectoryName="MindManager" path="D:\PortableApps_p\MindManagerPortable" />
-    <project name="Remo" id="RemoPortable" installDirectoryName="Remo" path="D:\PortableApps_p\RemoPortable" />
-    <project name="Remo" id="RemoPortable" installDirectoryName="Remo" path="D:\PortableApps_p\RemoPortable" />
-    <project name="Remo" id="RemoPortable" installDirectoryName="Remo" path="D:\PortableApps_p\RemoPortable" />
+    <project name="Macrorit" id="MacroritPortable" installDirectoryName="Macrorit" path="D:\PortableApps_p\MacroritPortable" />
+    <project name="AnyDesk" id="AnyDeskPortable" installDirectoryName="AnyDesk" path="D:\PortableApps_p\AnyDeskPortable" />
+    <project name="AOMEI" id="AOMEIPortable" installDirectoryName="AOMEI" path="D:\PortableApps_p\AOMEIPortable" />
+    <project name="MyBase" id="MyBasePortable" installDirectoryName="MyBase" path="D:\PortableApps_p\MyBasePortable" />
+    <project name="RStudio" id="RStudioPortable" installDirectoryName="RStudio" path="D:\PortableApps_p\RStudioPortable" />
+    <project name="RStudio" id="RStudioPortable" installDirectoryName="RStudio" path="D:\PortableApps_p\RStudioPortable" />
+    <project name="RStudio" id="RStudioPortable" installDirectoryName="RStudio" path="D:\PortableApps_p\RStudioPortable" />
   </history>
 </EditorSettings>

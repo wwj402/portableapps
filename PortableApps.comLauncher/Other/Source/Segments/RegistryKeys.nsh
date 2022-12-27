@@ -19,6 +19,7 @@ ${SegmentPrePrimary}
 			${ElseIf} ${FileExists} $DataDirectory\settings\$0.reg
 				${DebugMsg} "Loading $DataDirectory\settings\$0.reg into the registry."
 				${registry::RestoreKey} $DataDirectory\settings\$0.reg $R9
+				${ProcessWaitClose} "regedit.exe" "1000" $R8 ;waitfor regedit import.
 				${If} $R9 != 0 ; -1 = failure (probably HKLM without admin), 0 = success
 					${WriteRuntimeData} FailedRegistryKeys $0 true
 					${!getdebug}

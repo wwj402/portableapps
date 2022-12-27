@@ -289,7 +289,7 @@ ReadEnvStr: PortableApps.comLocaleID->$0
 !insertmacro: _Switch
 !insertmacro: end of _Switch
 !insertmacro: LanguageCases
-!include: "C:\Users\HOME\AppData\Local\Temp\nstE198.tmp" (UTF8)
+!include: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp" (UTF8)
 !insertmacro: _Case
 !insertmacro: end of _Case
 !insertmacro: _Case
@@ -340,9 +340,9 @@ ReadEnvStr: PortableApps.comLocaleID->$0
 !insertmacro: end of _Case
 !insertmacro: _Case
 !insertmacro: end of _Case
-!include: closed: "C:\Users\HOME\AppData\Local\Temp\nstE198.tmp"
-!delfile: "C:\Users\HOME\AppData\Local\Temp\nstE198.tmp"
-!delfile: deleted "C:\Users\HOME\AppData\Local\Temp\nstE198.tmp"
+!include: closed: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
+!delfile: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
+!delfile: deleted "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
 !undef: "LangAutoDetectFile"
 !insertmacro: end of LanguageCases
 !insertmacro: DebugMsg
@@ -4460,6 +4460,8 @@ WriteINIStr: [FailedRegistryKeys] $0=true in $PLUGINSDIR\runtimedata.ini
 Plugin command: _RestoreKey $DataDirectory\settings\$0.reg
 Pop: $R9
 !insertmacro: end of registry::RestoreKey
+!insertmacro: ProcessWaitCloseCall
+!insertmacro: end of ProcessWaitCloseCall
 !insertmacro: _If
 !insertmacro: end of _If
 !insertmacro: WriteRuntimeData
@@ -6578,17 +6580,17 @@ warning 6001: Variable "SrcUncFlag" not referenced or never set, wasting memory!
 warning 6001: Variable "DstNtfsFlag" not referenced or never set, wasting memory!
 
 Output: "D:\PortableApps_p\PyCharmPortable\PyCharmPortable.exe"
-Install: 0 pages (0 bytes), 1 section (1 required) (16408 bytes), 6188 instructions (173264 bytes), 1616 strings (126528 bytes), 25 language tables (6250 bytes).
+Install: 0 pages (0 bytes), 1 section (1 required) (16408 bytes), 6196 instructions (173488 bytes), 1617 strings (126516 bytes), 25 language tables (6250 bytes).
 
 Using lzma (compress whole) compression.
 
 EXE header size:              354816 / 38912 bytes
-Install code:                          (322778 bytes)
+Install code:                          (322990 bytes)
 Install data:                          (83996 bytes)
-Compressed data:               77860 / 406774 bytes
-CRC (0x156BBE09):                  4 / 4 bytes
+Compressed data:               77831 / 406986 bytes
+CRC (0xFB2DA19A):                  4 / 4 bytes
 
-Total size:                   432680 / 445690 bytes (97.0%)
+Total size:                   432651 / 445902 bytes (97.0%)
 
 229 warnings:
   !warning: LangString "LauncherUNCWarn" for language Bulgarian is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)

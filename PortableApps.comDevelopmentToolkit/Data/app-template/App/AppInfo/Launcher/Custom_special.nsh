@@ -6,53 +6,164 @@
 
 ${SegmentFile}
 
-; LangString SpecialMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
-; LangString SpecialMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
+/* LangString SpecialMessage1 1033 "It is possible that the program is exiting.\
+		$\r$\nPlease wait for the program to exit completely and then run again."
+LangString SpecialMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。" */
 
+; Function .onInit          ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} Temp
+; 	${RunSegment} Language
+; 	${RunSegment} OperatingSystem
+; 	${RunSegment} RunAsAdmin
+; FunctionEnd
 /* ${Segment.onInit}
 ; !macro ${SegmentSpecial}_.onInit
 	nop
 !macroend */
 
-${SegmentInit}
+; Function Init             ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} PathChecks
+; 	${RunSegment} Settings
+; 	${RunSegment} DriveLetter
+; 	${RunSegment} DirectoryMoving
+; 	${RunSegment} Variables
+; 	${RunSegment} Language
+; 	${RunSegment} Registry
+; 	${RunSegment} Java
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} InstanceManagement
+; 	${RunSegment} SplashScreen
+; 	${RunSegment} RefreshShellIcons
+; FunctionEnd
+/* ${SegmentInit}
 ; !macro ${SegmentSpecial}_Init
-/* 	!define INDEXBASE ${__COUNTER__}
+	!define INDEXBASE ${__COUNTER__}
 
 	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
-	!ifdef SPECIAL_INC${INDEX}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
 		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
 	!endif
 	!undef INDEX
 
-	!undef INDEXBASE */
-	nop
-!macroend
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
+!macroend */
 
+; Function Pre              ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} Environment
+; 	${RunSegment} ExecString
+; FunctionEnd
 /* ${SegmentPre}
 ; !macro ${SegmentSpecial}_Pre
-	nop
+	!define INDEXBASE ${__COUNTER__}
+
+	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
+		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
+	!endif
+	!undef INDEX
+
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
 !macroend */
 
+; Function PrePrimary       ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} DriveLetter
+; 	${RunSegment} Variables
+; 	${RunSegment} DirectoryMoving
+; 	${RunSegment} FileWrite
+; 	${RunSegment} FilesMove
+; 	${RunSegment} DirectoriesMove
+; 	;${RunSegment} RegisterDLL
+; 	${RunSegment} RegistryKeys
+; 	${RunSegment} RegistryValueBackupDelete
+; 	${RunSegment} RegistryValueWrite
+; 	${RunSegment} Services
+; FunctionEnd
 /* ${SegmentPrePrimary}
 ; !macro ${SegmentSpecial}_PrePrimary
-	nop
+	!define INDEXBASE ${__COUNTER__}
+
+	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
+		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
+	!endif
+	!undef INDEX
+
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
 !macroend */
 
+; Function PreSecondary     ;{{{1
+; 	${RunSegment} Custom
+; 	;${RunSegment} *
+; FunctionEnd
 /* ${SegmentPreSecondary}
 ; !macro ${SegmentSpecial}_PreSecondary
-	nop
-!macroend */
-
-/* ${SegmentPreExec}
-; !macro ${SegmentSpecial}_PreExec
-	nop
-!macroend */
-
-/* ${SegmentPreExecPrimary}
-; !macro ${SegmentSpecial}_PreExecPrimary
 	Nop
 !macroend */
 
+; Function PreExec          ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} RefreshShellIcons
+; 	${RunSegment} WorkingDirectory
+; FunctionEnd
+/* ${SegmentPreExec}
+; !macro ${SegmentSpecial}_PreExec
+	!define INDEXBASE ${__COUNTER__}
+
+	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
+		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
+	!endif
+	!undef INDEX
+
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
+!macroend */
+
+; Function PreExecPrimary   ;{{{1
+; 	${RunSegment} Custom
+; 	${RunSegment} Core
+; 	${RunSegment} SplashScreen
+; FunctionEnd
+/* ${SegmentPreExecPrimary}
+; !macro ${SegmentSpecial}_PreExecPrimary
+	!define INDEXBASE ${__COUNTER__}
+
+	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
+		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
+	!endif
+	!undef INDEX
+
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
+!macroend */
+
+; Function PreExecSecondary ;{{{1
+; 	${RunSegment} Custom
+; 	;${RunSegment} *
+; FunctionEnd
 /* ${SegmentPreExecSecondary}
 ; !macro ${SegmentSpecial}_PreExecSecondary
 	Nop
@@ -122,30 +233,61 @@ ${SegmentInit}
 
 !macroend */
 
-${SegmentPostPrimary}
+; Function PostPrimary      ;{{{1
+; 	${RunSegment} Services
+; 	${RunSegment} RegistryValueBackupDelete
+; 	${RunSegment} RegistryKeys
+; 	${RunSegment} RegistryCleanup
+; 	;${RunSegment} RegisterDLL
+; 	${RunSegment} Qt
+; 	${RunSegment} DirectoriesMove
+; 	${RunSegment} FilesMove
+; 	${RunSegment} DirectoriesCleanup
+; 	${RunSegment} RunLocally
+; 	${RunSegment} Temp
+; 	${RunSegment} Custom
+; FunctionEnd
+/* ${SegmentPostPrimary}
 ; !macro ${SegmentSpecial}_PostPrimary
-/* 	!define INDEXBASE ${__COUNTER__}
+	!define INDEXBASE ${__COUNTER__}
 
 	!define /math INDEX ${__COUNTER__} - ${INDEXBASE}
-	!ifdef SPECIAL_INC${INDEX}
+	!ifmacrodef ${SPECIAL_INC${INDEX}}_${__FUNCTION__}
 		!insertmacro "${SPECIAL_INC${INDEX}}_${__FUNCTION__}"
 	!endif
 	!undef INDEX
 
-	!undef INDEXBASE */
-	nop
-!macroend
+	!undef INDEXBASE
+	; !ifmacrodef ${SPECIAL_INC1}_${__FUNCTION__}
+	; 	!insertmacro "${SPECIAL_INC1}_${__FUNCTION__}"
+	; !endif
+!macroend */
 
+; Function PostSecondary    ;{{{1
+; 	;${RunSegment} *
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentPostSecondary}
 ; !macro ${SegmentSpecial}_PostSecondary
 	Nop
 !macroend */
 
+; Function Post             ;{{{1
+; 	${RunSegment} RefreshShellIcons
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentPost}
 ; !macro ${SegmentSpecial}_Post
 	Nop
 !macroend */
 
+; Function Unload           ;{{{1
+; 	${RunSegment} XML
+; 	${RunSegment} Registry
+; 	${RunSegment} SplashScreen
+; 	${RunSegment} Core
+; 	${RunSegment} Custom
+; FunctionEnd
 /* ${SegmentUnload}
 ; !macro ${SegmentSpecial}_Unload
 	Nop

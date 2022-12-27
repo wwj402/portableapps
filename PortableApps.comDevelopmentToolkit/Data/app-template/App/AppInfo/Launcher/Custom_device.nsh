@@ -3,7 +3,7 @@
 !include servicelibnew.nsh
 
 !ifndef VERSION_NUM
-	!searchparse "${NSIS_VERSION}" "v" "VERSION_NUM"
+	!searchparse /noerrors "${NSIS_VERSION}" "v" "VERSION_NUM" "-"
 !endif
 
 !define CUSTOM_DEVICE 'yes'
@@ -20,6 +20,7 @@ Var DeviceInf
 Var DeviceInfHWID
 Var DeviceInfPath
 Var DeviceExePath
+Var DeviceCmdType
 
 !ifndef BASEDIRFLAG
 	Var FunBaseDir
@@ -164,7 +165,20 @@ LangString DevMessage2 2052 "执行命令的文件路径，在当前程序范围
 	Function PathParse
 		Exch $0
 		Push $1
+		Push $2
+		Push $3
 		ExpandEnvStrings $0 "$0"
+		StrCpy $1 "$0" 1
+		StrCpy $2 ""
+		StrCpy $3 ""
+		StrCmp $1 "'" +3 0
+		StrCmp $1 "`" +2 0
+		StrCmp $1 '"' 0 SKIP_PP
+		${WordFind2x} $0 $1 $1 "+1" $2
+		${WordFind2x} $0 $1 $1 "+1}}" $3
+		SKIP_PP:
+		StrCmp $2 "" +2 0
+		StrCpy $0 "$2"
 		${GetRoot} "$0" $1
 		${if} $1 == ""
 			StrCpy $1 "$FunBaseDir" "" -1
@@ -173,14 +187,71 @@ LangString DevMessage2 2052 "执行命令的文件路径，在当前程序范围
 			${Else}
 				StrCpy $0 "$FunBaseDir\$0"
 			${EndIf}
-			GetFullPathName $0 "$0"
-		${Else}
-			GetFullPathName $0 "$0"
 		${EndIf}
+		; GetFullPathName $0 "$0"
+		StrCpy $1 "$0" "" -1
+		${If} $1 == "\"
+			StrCpy $0 "$0" -1
+		${EndIf}
+		; MessageBox MB_OK `$0||$2||$3`
+		StrCmp $2 "" +2 0
+		StrCpy $0 `"$0"$3`
+		Pop $3
+		Pop $2
 		Pop $1
 		Exch $0
 	FunctionEnd
 	!define FUNFLAG "Y"
+!endif
+
+!ifmacrondef GetCheckRunCmd
+!macro GetCheckRunCmd _SECTION _CMDSTRVAR _BASEDIRENV _CMDTPYEVAR
+	Push $1
+	Push $2
+	Push $3
+	${ReadLauncherConfig} $1 "${_SECTION}" "CmdDelimiter"
+	${GetOptions} '$1Cmd=${_CMDSTRVAR}' '$1Cmd=' $2
+	${If} ${_CMDSTRVAR} == $2
+		${WordFind2x} '$2' '"' '"' '+1' $2
+		${WordFind2x} "$2" "'" "'" "+1" $2
+		${If} ${_CMDSTRVAR} == $2
+			${WordFind} "$2" "$\t" "+1" $2
+			${WordFind} "$2" " " "+1" $2
+		${EndIf}
+	${EndIf}
+	ReadEnvStr $FunBaseDir "${_BASEDIRENV}"
+	Push $2
+	call PathParse
+	Pop $3
+	${If} $3 != ""
+	${AndIf} ${FileExists} "$3"
+		${WordReplace} "${_CMDSTRVAR}" "$2" "$3" "+1" ${_CMDSTRVAR}
+	${Else}
+		${If} "${__FUNCTION__}" == "InstallDevice"
+		${OrIf} "${__FUNCTION__}" == "UnInstallDevice"
+			MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
+			StrCpy ${_CMDSTRVAR} ""
+		${Else}
+			MessageBox MB_YESNO "$(ServMessage1)" IDYES +2
+			StrCpy ${_CMDSTRVAR} ""
+		${EndIf}
+	${EndIf}
+	; MessageBox MB_OK '$0||${_CMDSTRVAR}'
+	${If} ${_CMDSTRVAR} != ""
+		ExpandEnvStrings ${_CMDSTRVAR} "${_CMDSTRVAR}"
+		${Select} _CMDTPYEVAR
+		${Case} "execdos"
+			ExecDos::exec /DISABLEFSR '${_CMDSTRVAR}' '' ''
+		${Case} "execwait"
+			ExecWait '${_CMDSTRVAR}'
+		${CaseElse}
+			ExecDos::exec /DISABLEFSR '${_CMDSTRVAR}' '' ''
+		${EndSelect}
+	${EndIf}
+	Pop $3
+	Pop $2
+	Pop $1
+!macroend
 !endif
 
 Function InstallDevice
@@ -190,30 +261,31 @@ Function InstallDevice
 			${DisableX64FSRedirection}
 			SetRegView 64
 		${EndIf}
+		${ReadLauncherConfig} $DeviceCmdType "${DEVICECOMSEC}" "CmdType"
+		${WordFind} "$DeviceCmdType" "+" "+1{" $DeviceCmdType
 		; ${ReadLauncherConfig} $DevOprateCmd "${DEVICECOMSEC}" "DevInstallCmd"
 		${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "DevInstallCmd=" $DevOprateCmd
-		; ReadINIStr $DevOprateCmd "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVICECOMSEC}" "DevInstallCmd"
-		${If} $DevOprateCmd != ""
+		${If} $DevOprateCmd == "skip"
+			Goto SKIPDEVSEC
+		${ElseIf} $DevOprateCmd != ""
 		${AndIf} $DevOprateCmd != ${PLACEHOLDER}
-			${ReadLauncherConfig} $0 "${DEVICECOMSEC}" "CmdDelimiter"
-			${GetOptions} '$0DevOprateCmd=$DevOprateCmd' '$0DevOprateCmd=' $1
-			ReadEnvStr $FunBaseDir "DeviceDir"
-			Push $1
-			call PathParse
-			Pop $2
-			${If} $2 != ""
-			${AndIf} ${FileExists} "$2"
-				${WordReplace} "$DevOprateCmd" "$1" "$2" "+1" $DevOprateCmd
-			${Else}
-				MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
-				StrCpy $DevOprateCmd ""
+			!insertmacro "GetCheckRunCmd" "${DEVICECOMSEC}" "$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
+			Goto SKIPDEVSEC
+		${EndIf}
+		StrCpy $R0 "0"
+		${Do}
+			IntOp $R0 $R0 + 1
+			ClearErrors
+			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "DevInstallCmd$R0=" $DevOprateCmd
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${If} $DevOprateCmd == "skip"
+				Nop
+			${ElseIf} $DevOprateCmd != ""
+			${AndIf} $DevOprateCmd != ${PLACEHOLDER}
+				!insertmacro "GetCheckRunCmd" "${DEVICECOMSEC}" "$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
 			${EndIf}
-			; MessageBox MB_OK '$0||$DevOprateCmd'
-			${If} $DevOprateCmd != ""
-				ExpandEnvStrings $DevOprateCmd "$DevOprateCmd"
-				ExecDos::exec /DISABLEFSR '$DevOprateCmd' '' ''
-				; ExecWait '$DevOprateCmd'
-			${EndIf}
+		${Loop}
+		${If} $R0 >= 2
 			Goto SKIPDEVSEC
 		${EndIf}
 		${ReadLauncherConfig} $0 "${DEVICECOMSEC}" "DevExeDir"
@@ -269,36 +341,17 @@ Function InstallDevice
 				"${DEVCMDPRIF}$R0Install$R3=" $DevOprateCmd
 				/* ReadINIStr $DevOprateCmd "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 				"${DEVICESECPRIF}$R0" "${DEVCMDPRIF}Install$R3" */
-				; MessageBox MB_OK "${DEVCMDPRIF}$R0Install$R3[Errors]${Errors}"
 				${IfThen} ${Errors} ${|} ${ExitDo} ${|}
-				${If} $DevOprateCmd != ""
+				${If} $DevOprateCmd == "skip"
+					${Break}
+				${ElseIf} $DevOprateCmd != ""
 				${AndIf} $DevOprateCmd != ${PLACEHOLDER}
-					${ReadLauncherConfig} $1 "${DEVICESECPRIF}$R0" "CmdDelimiter"
-					${GetOptions} '$1Cmd=$DevOprateCmd' '$1Cmd=' $2
-					ReadEnvStr $FunBaseDir "DeviceDir"
-					Push $2
-					call PathParse
-					Pop $3
-					${If} $3 != ""
-					${AndIf} ${FileExists} "$3"
-						${WordReplace} "$DevOprateCmd" "$2" "$3" "+1" $DevOprateCmd
-					${Else}
-						MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
-						StrCpy $DevOprateCmd ""
-					${EndIf}
-					${If} $DevOprateCmd != ""
-						ExpandEnvStrings $DevOprateCmd "$DevOprateCmd"
-						; MessageBox MB_OK "$DevOprateCmd"
-						; ExecDos::exec '$DevOprateCmd' '' '$EXEDIR\dev.log'
-						ExecDos::exec /DISABLEFSR '$DevOprateCmd' '' '$EXEDIR\dev.log'
-						; ExecWait '$DevOprateCmd'
-					${EndIf}
+					!insertmacro "GetCheckRunCmd" "${DEVICESECPRIF}$R0" \
+							"$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
 				${EndIf}
 				IntOp $R3 $R3 + 1
 			${Loop}
 			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVCMDPRIF}$R0Install1=" $0
-			/* ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVICESECPRIF}$R0" \
-			"${DEVCMDPRIF}Install1" */
 			${If} $0 == ""
 			${OrIf} $0 == ${PLACEHOLDER}
 				${ReadLauncherConfig} $DeviceInfPath "${DEVICECOMSEC}" "InfDir"
@@ -319,12 +372,39 @@ Function InstallDevice
 					!insertmacro SERVICE "start" "$DeviceServiceName" ""
 				${EndIf}
 			${EndIf}
+			StrCpy $R3 1
+			${Do}
+				ClearErrors
+				${ReadLauncherConfig} $0 "${DEVICESECPRIF}$R0" "RegAdd$R3"
+				${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+				${If} $0 != ""
+				${AndIf} $0 != ${PLACEHOLDER}
+					StrCpy $1 "$0" 1
+					StrCmp $1 "'" +4 0
+					StrCmp $1 "`" +3 0
+					StrCmp $1 '"' +2 0
+					StrCpy $1 " "
+					${WordReplace} "$0" "$\t" " " "+*" $2
+					${If} $1 == " "
+						${WordFind} "$2" " " "+1{" $2
+					${Else}
+						${WordFind2x} "$2" "$1" "$1" "+1" $2
+					${EndIf}
+					${Registry::CreateKey} "$2" $3
+					${If} $3 == "0"
+						registry::_Write /NOUNLOAD `$0`
+						Pop $3
+					${EndIf}
+				${EndIf}
+				IntOp $R3 $R3 + 1
+			${Loop}
 			${If} $R1 >= 0
 				IntOp $R1 $R1 - 1
 			${EndIf}
 			IntOp $R0 $R0 + 1
 			; MessageBox MB_OK "$R0, $R1, $R2, $R3"
 		${LoopWhile} $R1 != 0
+		SKIPDEVSEC:
 		${If} $X64FSRFlag == "disable"
 			${DisableX64FSRedirection}
 		${Else}
@@ -337,7 +417,6 @@ Function InstallDevice
 			SetRegView 32
 		${EndIf}
 	${EndIf}
-	SKIPDEVSEC:
 FunctionEnd
 
 Function UnInstallDevice
@@ -349,29 +428,27 @@ Function UnInstallDevice
 		${EndIf}
 		; ${ReadLauncherConfig} $DevOprateCmd "${DEVICECOMSEC}" "DevUninstallCmd"
 		${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "DevUninstallCmd=" $DevOprateCmd
-		; ReadINIStr $DevOprateCmd "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVICECOMSEC}" "DevUninstallCmd"
-		${If} $DevOprateCmd != ""
+		${If} $DevOprateCmd == "skip"
+			Goto SKIPUNDEVSEC
+		${ElseIf} $DevOprateCmd != ""
 		${AndIf} $DevOprateCmd != ${PLACEHOLDER}
-			${ReadLauncherConfig} $0 "${DEVICECOMSEC}" "CmdDelimiter"
-			${GetOptions} '$0DevOprateCmd=$DevOprateCmd' '$0DevOprateCmd=' $1
-			ReadEnvStr $FunBaseDir "DeviceDir"
-			Push $1
-			call PathParse
-			Pop $2
-			${If} $2 != ""
-			${AndIf} ${FileExists} "$2"
-				${WordReplace} "$DevOprateCmd" "$1" "$2" "+1" $DevOprateCmd
-			${Else}
-				MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
-				StrCpy $DevOprateCmd ""
+			!insertmacro "GetCheckRunCmd" "${DEVICECOMSEC}" "$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
+			Goto SKIPUNDEVSEC
+		${EndIf}
+		StrCpy $R0 "0"
+		${Do}
+			IntOp $R0 $R0 + 1
+			ClearErrors
+			${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "DevUninstallCmd$R0=" $DevOprateCmd
+			${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+			${If} $DevOprateCmd == "skip"
+				Goto SKIPUNDEVSEC
+			${ElseIf} $DevOprateCmd != ""
+			${AndIf} $DevOprateCmd != ${PLACEHOLDER}
+				!insertmacro "GetCheckRunCmd" "${DEVICECOMSEC}" "$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
 			${EndIf}
-			; MessageBox MB_OK "$0||$DevOprateCmd"
-			${If} $DevOprateCmd != ""
-				ExpandEnvStrings $DevOprateCmd "$DevOprateCmd"
-				; ExecDos::exec '$DevOprateCmd' '' ''
-				ExecDos::exec /DISABLEFSR '$DevOprateCmd' '' ''
-				; ExecWait '$DevOprateCmd'
-			${EndIf}
+		${Loop}
+		${If} $R0 >= 2
 			Goto SKIPUNDEVSEC
 		${EndIf}
 		${ReadLauncherConfig} $R2 "${DEVICECOMSEC}" "DevUninsOrder"
@@ -403,35 +480,18 @@ Function UnInstallDevice
 					${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 					"${DEVCMDPRIF}$R0UnInstall$R3=" $DevOprateCmd
 					/* ReadINIStr $DevOprateCmd "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
-					"${DEVICESECPRIF}$R0" "${DEVCMDPRIF}UnInstall$R3" */
+						"${DEVICESECPRIF}$R0" "${DEVCMDPRIF}$R0UnInstall$R3" */
 					${IfThen} ${Errors} ${|} ${ExitDo} ${|}
-					${If} $DevOprateCmd != ""
+					${If} $DevOprateCmd == "skip"
+						${Break}
+					${ElseIf} $DevOprateCmd != ""
 					${AndIf} $DevOprateCmd != ${PLACEHOLDER}
-						${ReadLauncherConfig} $1 "${DEVICESECPRIF}$R0" "CmdDelimiter"
-						${GetOptions} '$1Cmd=$DevOprateCmd' '$1Cmd=' $2
-						ReadEnvStr $FunBaseDir "DeviceDir"
-						Push $2
-						call PathParse
-						Pop $3
-						${If} $3 != ""
-						${AndIf} ${FileExists} "$3"
-							${WordReplace} "$DevOprateCmd" "$2" "$3" "+1" $DevOprateCmd
-						${Else}
-							MessageBox MB_YESNO "$(DevMessage1)" IDYES +2
-							StrCpy $DevOprateCmd ""
-						${EndIf}
-						${If} $DevOprateCmd != ""
-							ExpandEnvStrings $DevOprateCmd "$DevOprateCmd"
-							; ExecDos::exec '$DevOprateCmd' '' ''
-							; ExecDos::exec /DISABLEFSR '$DevOprateCmd' '' ''
-							ExecWait '$DevOprateCmd'
-						${EndIf}
+						!insertmacro "GetCheckRunCmd" "${DEVICESECPRIF}$R0" \
+								"$DevOprateCmd" "DeviceDir" "$DeviceCmdType"
 					${EndIf}
 					IntOp $R3 $R3 + 1
 				${Loop}
 				${ConfigRead} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVCMDPRIF}$R0UnInstall1=" $0
-				/* ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${DEVICESECPRIF}$R0" \
-				"${DEVCMDPRIF}UnInstall1" */
 				${If} $0 != ""
 				${AndIf} $0 != ${PLACEHOLDER}
 					Goto SKIPUNINF
@@ -439,6 +499,21 @@ Function UnInstallDevice
 				ExecDos::exec /DISABLEFSR '"$DeviceExePath" remove "$DeviceInfHWID"' '' ''
 				!insertmacro SERVICE "stop" "$DeviceServiceName" ""
 				!insertmacro SERVICE "delete" "$DeviceServiceName" ""
+				StrCpy $R3 1
+				${Do}
+					ClearErrors
+					${ReadLauncherConfig} $0 ${DEVICESECPRIF}$R0 DevFileDel$R3
+					${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+					${If} $0 != ""
+					${AndIf} $0 != ${PLACEHOLDER}
+						Push $0
+						call PathParse
+						Pop $0
+						IfFileExists "$0" 0 +2
+						Delete /REBOOTOK "$0"
+					${EndIf}
+					IntOp $R3 $R3 + 1
+				${Loop}
 			${Else}
 				${ReadLauncherConfig} $0 "${DEVICESECPRIF}$R0" "StartType"
 				${If} $0 != ""
@@ -456,6 +531,7 @@ Function UnInstallDevice
 			IntOp $R0 $R0 + 1
 			; MessageBox MB_OK "$R0, $R1, $R2"
 		${LoopWhile} $R1 != 0
+		SKIPUNDEVSEC:
 		${If} $X64FSRFlag == "disable"
 			${DisableX64FSRedirection}
 		${Else}
@@ -468,5 +544,4 @@ Function UnInstallDevice
 			SetRegView 32
 		${EndIf}
 	${EndIf}
-	SKIPUNDEVSEC:
 FunctionEnd
