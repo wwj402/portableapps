@@ -312,6 +312,7 @@ ${SegmentPre}
 				StrCpy $0 "$2\$0"
 			${EndIf}
 			${If} ${FileExists} "$EXEDIR\App\$0"
+			${AndIfNot} $0 == $1
 				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable64=" "$1" $2
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable64" "$0"
 			${EndIf}
@@ -323,6 +324,7 @@ ${SegmentPre}
 				StrCpy $0 "$2\$0"
 			${EndIf}
 			${If} ${FileExists} "$EXEDIR\App\$0"
+			${AndIfNot} $0 == $1
 				${ConfigWrite} "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "; ProgramExecutable=" "$1" $2
 				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch "ProgramExecutable" "$0"
 			${EndIf}

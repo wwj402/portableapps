@@ -2,7 +2,7 @@
     Original Code from
     (C) 2001 - Peter Windridge
 
-    Code in separate unit and some changes
+    Code in seperate unit and some changes
     2003 by Bernhard Mayer
 
     Fixed and formatted by Brett Dever
@@ -50,18 +50,9 @@ type
     );
   TVariableList = INST_0..__INST_LAST;
 
-type
-  PluginCallbackMessages = (
-    NSPIM_UNLOAD,   // This is the last message a plugin gets, do final cleanup
-    NSPIM_GUIUNLOAD // Called after .onGUIEnd
-    );
-  TNSPIM = NSPIM_UNLOAD..NSPIM_GUIUNLOAD;
-
-  //TPluginCallback = function (const NSPIM: Integer): Pointer; cdecl;
-
   TExecuteCodeSegment = function (const funct_id: Integer; const parent: HWND): Integer;  stdcall;
-  Tvalidate_filename = procedure (const filename: PChar); stdcall;
-  TRegisterPluginCallback = function (const DllInstance: HMODULE; const CallbackFunction: Pointer): Integer; stdcall;
+  Tvalidate_filename = procedure (const filename: PChar); cdecl;
+  TRegisterPluginCallback = function (const unknow: Integer; const uknown2: Integer): Integer; cdecl;
 
   pexec_flags_t = ^exec_flags_t;
   exec_flags_t = record
@@ -84,7 +75,7 @@ type
   pextrap_t = ^extrap_t;
   extrap_t = record
     exec_flags: Pointer; // exec_flags_t;
-    exec_code_segment: TExecuteCodeSegment; //  TFarProc;
+    exec_code_segment: Pointer; //  TFarProc;
     validate_filename: Pointer; // Tvalidate_filename;
     RegisterPluginCallback: Pointer; //TRegisterPluginCallback;
   end;
@@ -102,7 +93,10 @@ var
   g_hwndParent: HWND;
   g_hwndList: HWND;
   g_hwndLogList: HWND;
+
   g_extraparameters: pextrap_t;
+  func : TExecuteCodeSegment;
+  extrap : extrap_t;
 
 procedure Init(const hwndParent: HWND; const string_size: integer; const variables: PChar; const stacktop: pointer; const extraparameters: pointer = nil);
 
@@ -122,21 +116,23 @@ begin
   g_hwndParent := hwndParent;
   g_stacktop   := stacktop;
   g_variables  := variables;
-  g_hwndList   := FindWindowEx(FindWindowEx(g_hwndParent, 0, '#32770', nil), 0,'SysListView32', nil);
+  g_hwndList := 0;
+  g_hwndList := FindWindowEx(FindWindowEx(g_hwndParent, 0, '#32770', nil), 0,'SysListView32', nil);
   g_extraparameters := extraparameters;
+  extrap := g_extraparameters^;
 end;
-
 
 function Call(NSIS_func : String) : Integer;
 var
-  codeoffset: Integer; //The ID of nsis function
+  NSISFun: Integer; //The ID of nsis function
 begin
   Result := 0;
-  codeoffset := StrToIntDef(NSIS_func, 0);
-  if (codeoffset <> 0) and (g_extraparameters <> nil) then
+  NSISFun := StrToIntDef(NSIS_func, 0);
+  if (NSISFun <> 0) and (g_extraparameters <> nil) then
     begin
-    codeoffset := codeoffset - 1;
-    Result := g_extraparameters.exec_code_segment(codeoffset, g_hwndParent);
+    @func := extrap.exec_code_segment;
+    NSISFun := NSISFun - 1;
+    Result := func(NSISFun, g_hwndParent);
     end;
 end;
 
@@ -151,8 +147,8 @@ begin
   ItemCount := SendMessage(g_hwndList, LVM_GETITEMCOUNT, 0, 0);
   item.iItem := ItemCount;
   item.mask := LVIF_TEXT;
-  item.pszText := PChar(Msg);
-  ListView_InsertItem(g_hwndList, item);
+  item.pszText := PAnsiChar(Msg);
+  ListView_InsertItem(g_hwndList, item );
   ListView_EnsureVisible(g_hwndList, ItemCount, TRUE);
 end;
 
@@ -195,12 +191,8 @@ begin
 end;
 
 procedure NSISDialog(const text, caption: string; const buttons: integer);
-var
-  hwndOwner: HWND;
 begin
-  hwndOwner := g_hwndParent;
-  if not IsWindow(g_hwndParent) then hwndOwner := 0; // g_hwndParent is not valid in NSPIM_[GUI]UNLOAD
-  MessageBox(hwndOwner, PChar(text), PChar(caption), buttons);
+  MessageBox(g_hwndParent, PChar(text), PChar(caption), buttons);
 end;
 
 begin

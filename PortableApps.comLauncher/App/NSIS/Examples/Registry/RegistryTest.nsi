@@ -11,88 +11,76 @@ Page instfiles
 
 
 Section "Basic registry functions" Basic
-	${registry::KeyExists} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" $R0
+	${registry::KeyExists} "HKEY_CURRENT_USER\SOFTWARE\NSIS" $R0
 	MessageBox MB_OK "registry::KeyExists$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::Write} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "%WINDIR%\notepad.exe" "REG_EXPAND_SZ" $R0
+	${registry::Write} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" "%WINDIR%\notepad.exe" "REG_EXPAND_SZ" $R0
 	MessageBox MB_OK "registry::Write$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::Read} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0 $R1
+	${registry::Read} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" $R0 $R1
 	MessageBox MB_OK 'registry::Read$\n$\n\
-			$$R0    "string" =[$R0] = %WinDir%\notePad.exe$\n\
-			$$R1    "type"   =[$R1] = REG_EXPAND_SZ$\n'
+			$$R0    "string" =[$R0]$\n\
+			$$R1    "type"   =[$R1]$\n'
 
-	${registry::CreateKey} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\new1\new2\new3" $R0
+	${registry::CreateKey} "HKEY_CURRENT_USER\SOFTWARE\NSIS\new1\new2\new3" $R0
 	MessageBox MB_OK "registry::CreateKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::CreateKey} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\new1\new2\new3" $R0
+	${registry::CreateKey} "HKEY_CURRENT_USER\SOFTWARE\NSIS\new1\new2\new3" $R0
 	MessageBox MB_OK "registry::CreateKey$\n$\n\
-			Errorlevel: [$R0] = 1"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteKeyEmpty} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\new1\new2" $R0
+	${registry::DeleteKeyEmpty} "HKEY_CURRENT_USER\SOFTWARE\NSIS\new1\new2" $R0
 	MessageBox MB_OK "registry::DeleteEmptyKey$\n$\n\
-			Errorlevel: [$R0] = -1"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteKeyEmpty} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\new1\new2\new3" $R0
+	${registry::DeleteKeyEmpty} "HKEY_CURRENT_USER\SOFTWARE\NSIS\new1\new2\new3" $R0
 	MessageBox MB_OK "registry::DeleteEmptyKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteKey} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\new1" $R0
+	${registry::DeleteKey} "HKEY_CURRENT_USER\SOFTWARE\NSIS\new1" $R0
 	MessageBox MB_OK "registry::DeleteKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0
+	${registry::DeleteValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" $R0
 	MessageBox MB_OK "registry::DeleteValue$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::CopyValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "MakeNSISWPlacement" "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\Symbols" "copied_MakeNSISWPlacement" $R0
+	${registry::CopyValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "MakeNSISWPlacement" "HKEY_CURRENT_USER\SOFTWARE\NSIS\Symbols" "copied_MakeNSISWPlacement" $R0
 	MessageBox MB_OK "registry::CopyValue$\n$\n\
-			Errorlevel: [$R0] = -1"
+			Errorlevel: [$R0]"
 
-	${registry::MoveValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS\Symbols" "copied_MakeNSISWPlacement" "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "moved_MakeNSISWPlacement" $R0
+	${registry::MoveValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS\Symbols" "copied_MakeNSISWPlacement" "HKEY_CURRENT_USER\SOFTWARE\NSIS" "moved_MakeNSISWPlacement" $R0
 	MessageBox MB_OK "registry::MoveValue$\n$\n\
-			Errorlevel: [$R0] = -1"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "moved_MakeNSISWPlacement" $R0
+	${registry::DeleteValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "moved_MakeNSISWPlacement" $R0
 
-	${registry::CopyKey} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "HKEY_CURRENT_USER\SOFTWARE\_NSIS" $R0
+	${registry::CopyKey} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "HKEY_CURRENT_USER\SOFTWARE\_NSIS" $R0
 	MessageBox MB_OK "registry::CopyKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::MoveKey} "HKEY_CURRENT_USER\SOFTWARE\_NSIS" "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS_" $R0
+	${registry::MoveKey} "HKEY_CURRENT_USER\SOFTWARE\_NSIS" "HKEY_CURRENT_USER\SOFTWARE\NSIS_" $R0
 	MessageBox MB_OK "registry::MoveKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::DeleteKey} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS_" $R0
+	${registry::DeleteKey} "HKEY_CURRENT_USER\SOFTWARE\NSIS_" $R0
 
-	${registry::StrToHex} "Some Value" $0
+	${registry::StrToHexA} "Some Value" $0
 
-	${registry::Write} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "$0" "REG_BINARY" $R0
-	MessageBox MB_OK "registry::StrToHex$\n$\n\
-			Hex string: [$0]$\n$\n = 536f6d652056616c7565"
+	${registry::Write} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" "$0" "REG_BINARY" $R0
+	MessageBox MB_OK "registry::StrToHexA$\n$\n\
+			Hex string: [$0]"
 
-	${registry::Read} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0 $R1
+	${registry::Read} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" $R0 $R1
 
-	${registry::HexToStr} "$R0" $R1
-	MessageBox MB_OK "registry::HexToStr$\n$\n\
-			String: [$R1] = Some Value"
-!ifdef NSIS_UNICODE
-	${registry::StrToHexUTF16LE} "Some Value" $0
+	${registry::HexToStrA} "$R0" $R1
+	MessageBox MB_OK "registry::HexToStrA$\n$\n\
+			String: [$R1]"
 
-	${registry::Write} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "$0" "REG_BINARY" $R0
-	MessageBox MB_OK "registry::StrToHexUTF16LE$\n$\n\
-			Hex string: [$0]$\n$\n = 53006f006d0065002000560061006c0075006500"
-
-	${registry::Read} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0 $R1
-
-	${registry::HexToStrUTF16LE} "$R0" $R1
-	MessageBox MB_OK "registry::HexToStrUTF16LE$\n$\n\
-			String: [$R1] = Some Value"
-!endif
-	${registry::DeleteValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0
+	${registry::DeleteValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" $R0
 
 
 	#Write extra string
@@ -103,28 +91,28 @@ Section "Basic registry functions" Basic
 	StrLen $2 $1
 	IntCmp $2 1022 0 -3
 
-	${registry::Write} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "$1" "REG_SZ" $R0
+	${registry::Write} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" "$1" "REG_SZ" $R0
 	MessageBox MB_OK "registry::Write$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
-	${registry::WriteExtra} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "----More text----" $R0
+	${registry::WriteExtra} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" "----More text----" $R0
 	MessageBox MB_OK "registry::WriteExtra$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 
 
 	#Read extra string
 	StrCpy $0 0
 
 	loop:
-	${registry::ReadExtra} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" "$0" $R0 $R1
+	${registry::ReadExtra} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" "$0" $R0 $R1
 	IntOp $0 $0 + 1022   #if binary data then +511
 
 	MessageBox MB_YESNO 'Read next part?$\n$\n\
 			registry::ReadExtra$\n$\n\
-			$$R0    "string" =[$R0] = 1 -> 282 / ----More text----$\n\
-			$$R1    "type"   =[$R1] = REG_SZ' IDYES loop
+			$$R0    "string" =[$R0]$\n\
+			$$R1    "type"   =[$R1]' IDYES loop
 
-	${registry::DeleteValue} "HKEY_LOCAL_MACHINE\SOFTWARE\NSIS" "new" $R0
+	${registry::DeleteValue} "HKEY_CURRENT_USER\SOFTWARE\NSIS" "new" $R0
 
 	${registry::Unload}
 SectionEnd
@@ -221,18 +209,18 @@ SectionEnd
 
 
 Section /o "Save to the file" SaveKey
-	${registry::SaveKey} "HKCU\SOFTWARE\NSIS" "$EXEDIR\saved.reg" "/G=1 /D=2" $R0
+	${registry::SaveKey} "HKCU\SOFTWARE\NSIS" "saved.reg" "/G=1 /D=2" $R0
 	${registry::Unload}
 	MessageBox MB_OK "registry::SaveKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 SectionEnd
 
 
 Section /o "Restore from the file" RestoreKey
-	${registry::RestoreKey} "$EXEDIR\saved.reg" $R0
+	${registry::RestoreKey} "saved.reg" $R0
 	${registry::Unload}
 	MessageBox MB_OK "registry::RestoreKey$\n$\n\
-			Errorlevel: [$R0] = 0"
+			Errorlevel: [$R0]"
 SectionEnd
 
 

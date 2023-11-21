@@ -4,6 +4,6 @@ title Switching to big UI...
 del modern.exe
 del modern_headerbmp.exe
 del modern_headerbmpr.exe
-copy modern__BIG.exe modern.exe
-copy modern_headerbmp__BIG.exe modern_headerbmp.exe
-copy modern_headerbmpr__BIG.exe modern_headerbmpr.exe
+copy modern_big.exe modern.exe
+copy modern_headerbmp_big.exe modern_headerbmp.exe
+copy modern_headerbmpr_big.exe modern_headerbmpr.exe

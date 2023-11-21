@@ -1,15 +1,15 @@
-﻿;Language: Uyghur (1152)
+;Language: Uyghur (1152)
 ;Uyghur(China), Translated By Yasinjan Ghupur (yasenghupur@sina.com)
 
-!insertmacro LANGFILE "Uyghur" = "Uyghur" =
+!insertmacro LANGFILE "Uyghur" "Uyghur"
 
 !ifdef MUI_WELCOMEPAGE
-  ${LangFileString} MUI_TEXT_WELCOME_INFO_TITLE "$(^NameDA) نى قاچىلاش يېتەكچىسىنى ئىشلىتىشىڭىزنى قارشى ئالىدۇ"
-  ${LangFileString} MUI_TEXT_WELCOME_INFO_TEXT "قاچىلاش يېتەكچىسى $(^NameDA)نى قاچىلاش جەريانىغا يېتەكچىلىك قىلىدۇ.$\r$\n$\r$\nقاچىلاشتىن بۇرۇن بارلىق پروگراممىلارنى يېپىۋېتىشنى تەۋسىيە قىلىدۇ،بۇنىڭ بىلەن قاچىلاپ بولغاندىن كېيىن كومپيۇتېرىڭىزنى قايتا قوزغاتمىسىڭىزمۇ بولىدۇ.$\r$\n$\r$\n$_CLICK"
+  ${LangFileString} MUI_TEXT_WELCOME_INFO_TITLE " $(^NameDA) نى قاچىلاش يېتەكچىسىنى ئىشلىتىشىڭىزنى قارشى ئالىدۇ"
+  ${LangFileString} MUI_TEXT_WELCOME_INFO_TEXT "قاچىلاش يېتەكچىسى $(^NameDA)نى قاچىلاش جەريانىغا يېتەكچىلىك قىلىدۇ  .$\r$\n$\r$\nقاچىلاشتىن بۇرۇن بارلىق پروگراممىلارنى يېپىۋېتىشنى تەۋسىيە قىلىدۇ،بۇنىڭ بىلەن قاچىلاپ بولغاندىن كېيىن كومپيۇتېرىڭىزنى قايتا قوزغاتمىسىڭىزمۇ بولىدۇ.$\r$\n$\r$\n$_CLICK"
 !endif
 
 !ifdef MUI_UNWELCOMEPAGE
-  ${LangFileString} MUI_UNTEXT_WELCOME_INFO_TITLE "$(^NameDA) نى ئۆچۈرۈش يېتەكچىسىنى ئىشلىتىشىڭىزنى قارشى ئالىدۇ"
+  ${LangFileString} MUI_UNTEXT_WELCOME_INFO_TITLE " $(^NameDA) نى ئۆچۈرۈش يېتەكچىسىنى ئىشلىتىشىڭىزنى قارشى ئالىدۇ"
   ${LangFileString} MUI_UNTEXT_WELCOME_INFO_TEXT "ئۆچۈرۈش يېتەكچىسى$(^NameDA)نى ئۆچۈرۈش جەريانىغا يېتەكچىلىك قىلىدۇ   .$\r$\n$\r$\n ئۆچۈرۈشتىن بۇرۇن $(^NameDA)نىڭ قوزغىتىلمىغانلىقىنى جەزىملەشتۈرۈڭ.$\r$\n$\r$\n$_CLICK"
 !endif
 
@@ -26,7 +26,7 @@
   ${LangFileString} MUI_UNTEXT_LICENSE_SUBTITLE " $(^NameDA)نى ئۆچۈرۈشتىن بۇرۇن ئىجازەت كېلىشىم تۈرلىرىنى كۆرۈپ چىقىڭ ."
   ${LangFileString} MUI_UNINNERTEXT_LICENSE_BOTTOM "$(^NameDA)نى ئۆچۈرۈش ئۈچۈن، كېلىشىمگە قوشۇلىشىڭىز كېرەك .كېلىشىم تۈرلىرىگە قوشۇلسىڭىز, قوشۇلىمەن نى بېسىپ داۋاملاشتۇرۇڭ ."
   ${LangFileString} MUI_UNINNERTEXT_LICENSE_BOTTOM_CHECKBOX "$(^NameDA) نى ئۆچۈرۈش  ئۈچۈن كېلىشىم تۈرلىرىگە قوشۇلىشىڭىز كېرەك .قوشۇلسىڭىز, تاللاش كاتەكچىسىنى چېكىڭ. $_CLICK"
-  ${LangFileString} MUI_UNINNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS "$(^NameDA)نى ئۆچۈرۈش ئۈچۈن كېلىشىم تۈرلىرىگە قوشۇلىشىڭىز كېرەك. قوشۇلسىڭىز،بىرىنجى تاللاشنى تاللاڭ. $_CLICK"
+  ${LangFileString} MUI_UNINNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS "$(^NameDA)نى ئۆچۈرۈش ئۈچۈن كېلىشىم تۈرلىرىگە قوشۇلىشىڭىز كېرەك. قوشۇلسىڭىز،بىرىنجى تاللاشنى تاللاڭ . $_CLICK"
 !endif
 
 !ifdef MUI_LICENSEPAGE | MUI_UNLICENSEPAGE

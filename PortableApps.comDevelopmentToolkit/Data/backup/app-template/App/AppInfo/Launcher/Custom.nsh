@@ -103,21 +103,72 @@ Function Post             ;{{{1
 	${RunSegment} RefreshShellIcons
 	${RunSegment} Custom
 FunctionEnd
+
+Function Unload           ;{{{1
+	${RunSegment} XML
+	${RunSegment} Registry
+	${RunSegment} SplashScreen
+	${RunSegment} Core
+	${RunSegment} Custom
+FunctionEnd
  */
+
+Var OSarch
+Var RegViewFlag
+Var X64FSRFlag
+
+!addincludedir "${PACKAGE}\App\AppInfo\Launcher"
+!include "Custom_special.nsh"
+!ifndef SegmentSpecial
+	!define SegmentSpecial "Custom_special.nsh"
+!endif
 
 ${SegmentFile}
 
-!addincludedir "${PACKAGE}\App\AppInfo\Launcher"
+LangString LangMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
+LangString LangMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
+
 !include "x64.nsh"
-; !include "Custom_service.nsh"
+!ifndef AppID
+!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\appinfo.ini" `AppID=` AppID
+!endif
+
+!if "${AppID}" != ""
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
+	`Service=` SERVICEINC
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
+	`Device=` DEVICEINC
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
+	`Regsvr32=` DLLINC
+	!searchparse /ignorecase /noerrors /file "${PACKAGE}\App\AppInfo\Launcher\${AppID}.ini" \
+	`Targetlink=` LINKINC
+!endif
+; !error "${AppID}||${SERVICEINC}||${DEVICEINC}||${DLLINC}||${LINKINC}"
+!if "${DEVICEINC}" == "true"
+	!include "Custom_device.nsh"
+!endif
+!if "${SERVICEINC}" == "true"
+	!include "Custom_service.nsh"
+!endif
+!if "${DLLINC}" == "true"
+	!include "Custom_dll.nsh"
+!endif
+!if "${LINKINC}" == "true"
+	!include "Custom_link.nsh"
+!endif
 ; !include "Custom_device.nsh"
+; !include "Custom_service.nsh"
 ; !include "Custom_link.nsh"
 ; !include "Custom_dll.nsh"
 ; !include "Custom_patch.nsh"
 
-LangString LangMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
-LangString LangMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
-Var OSarch
+${Segment.onInit}
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
+!macroend
 
 ${SegmentInit}
 
@@ -125,13 +176,20 @@ ${SegmentInit}
 
 	${SetEnvironmentVariable} PORTABLEBASEDIR $EXEDIR
 	${SetEnvironmentVariable} PORTABLEBASENAME $BaseName
-	${SetEnvironmentVariable} PORTABLEEXEFILE $EXEFILE
+	${SetEnvironmentVariable} PORTABLEFILENAME $EXEFILE
 	SetShellVarContext all
 	${SetEnvironmentVariable} ALLUSERDOCUMENTS $DOCUMENTS
+	SetShellVarContext current
 
-	${LineSum} "$EXEDIR\$BaseName.ini" $0
+	StrCpy $RegViewFlag "32"
+	StrCpy $X64FSRFlag "enable"
+
+	; ${LineSum} "$EXEDIR\$BaseName.ini" $0
+	ClearErrors
+	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" "X64RegView"
 	${IfNot} ${FileExists} "$EXEDIR\$BaseName.ini"
-	${OrIf} $0 < 10
+	${OrIf} ${Errors}
+	; ${OrIf} $0 < 10
 		; IfFileExists "$EXEDIR\$BaseName.ini" +10 0
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" UserName ""
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" AdditionalParameters ""
@@ -141,19 +199,23 @@ ${SegmentInit}
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" SinglePortableAppInstance ""
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" AlwaysUse32Bit ""
 		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView ""
-		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection "true"
+		WriteINIStr "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection ""
 	${EndIf}
 
 	${If} ${RunningX64}
 		StrCpy $OSarch 64
-		/* ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
-		${If} $0 == 64
+/* 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
+		${If} $0 == 32
+			SetRegView 32
+		${Else}
 			SetRegView 64
 		${EndIf}
 		ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
 		${If} $0 == false
 			${DisableX64FSRedirection}
 		${EndIf} */
+	${Else}
+		StrCpy $OSarch 32
 	${EndIf}
 
 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" AlwaysUse32Bit
@@ -165,26 +227,37 @@ ${SegmentInit}
 		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable64
 		${If} $0 != ""
 		${AndIf} ${FileExists} "$EXEDIR\App\$0"
-			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
-			${If} $0 == 32
+			ReadINIStr $1 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
+			${If} $1 == 32
 				SetRegView 32
+				StrCpy $RegViewFlag "32"
 			${Else}
 				SetRegView 64
+				StrCpy $RegViewFlag "64"
+			${EndIf}
+			ReadINIStr $1 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
+			${If} $1 != true
+				${DisableX64FSRedirection}
+				StrCpy $X64FSRFlag "disable"
 			${EndIf}
 			${GetParent} "$EXEDIR\App\$0" $1
 			${SetEnvironmentVariable} ProgramDir $1
+			${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 		${Else}
 		 	ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
 			${If} $0 == 64
 				SetRegView 64
+				StrCpy $RegViewFlag "64"
 			${EndIf}
 			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
 			${If} $0 == false
 				${DisableX64FSRedirection}
+				StrCpy $X64FSRFlag "disable"
 			${EndIf}
 			ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
 			${GetParent} "$EXEDIR\App\$0" $1
 			${SetEnvironmentVariable} ProgramDir $1
+			${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 		${EndIf}
 	${EndIf}
 	${If} $Bits == 32
@@ -192,15 +265,18 @@ ${SegmentInit}
 			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64RegView
 			${If} $0 == 64
 				SetRegView 64
+				StrCpy $RegViewFlag "64"
 			${EndIf}
 			ReadINIStr $0 "$EXEDIR\$BaseName.ini" "$BaseName" X64FSRedirection
 			${If} $0 == false
 				${DisableX64FSRedirection}
+				StrCpy $X64FSRFlag "disable"
 			${EndIf}
 		${EndIf}
-		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable	
+		ReadINIStr $0 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch ProgramExecutable
 		${GetParent} "$EXEDIR\App\$0" $1
 		${SetEnvironmentVariable} ProgramDir $1
+		${SetEnvironmentVariable} ProgramPath "$EXEDIR\App\$0"
 	${EndIf}
 
 	ClearErrors
@@ -220,18 +296,48 @@ ${SegmentInit}
 	${OrIf} $0 == true
 		WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" Launch SinglePortableAppInstance $0
 	${EndIf}
+	!ifdef CUSTOM_DEVICE
+		Call SetOsArch
+	!endif
+	!ifdef CUSTOM_SERVICE
+		Call SetOsArch
+	!endif
+	!ifdef CUSTOM_LINK
+		Call InitLink
+	!endif
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!endif
 
 !macroend
 
 ${SegmentPre}
-	Nop
-	; Call CreateLink
+	!ifdef CUSTOM_LINK
+		Call CreateLink
+	!endif
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
 ${SegmentPrePrimary}
-	Nop
-	; Call InstallDevice
-	; Call InstallService
+	!ifdef CUSTOM_DEVICE
+		Push "DeviceDir"
+		Call BaseDir
+		Call InstallDevice
+	!endif
+	!ifdef CUSTOM_SERVICE
+		Push "ServiceDir"
+		Call BaseDir
+		Call InstallService
+	!endif
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
 ${SegmentPreSecondary}
@@ -252,6 +358,9 @@ ${SegmentPreSecondary}
 			${EndIf}
 		${EndIf}
 	${EndIf}
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!endif
 
 !macroend
 
@@ -275,18 +384,32 @@ ${SegmentPreExec}
 		CreateDirectory "$0"
 	${EndIf}
 
-	; Call RegsvrDll
+	!ifdef CUSTOM_DLL
+		Call RegsvrDll
+	!endif
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!endif
 
 !macroend
 
 ${SegmentPreExecPrimary}
-	Nop
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
 ${SegmentPreExecSecondary}
-	Nop
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
+!ifmacrondef OverrideExecuteFunction
 ${OverrideExecute}
 
 	${!getdebug}
@@ -345,21 +468,52 @@ ${OverrideExecute}
 		${EndIf}
 	${EndIf}
 
-	; Call UnRegsvrDll
+	!ifdef CUSTOM_DLL
+		Call UnRegsvrDll
+	!endif
 
 !macroend
+!endif
 
 ${SegmentPostPrimary}
-	Nop
-	; Call UnInstallDevice
-	; Call UnInstallService
-	; Call RemoveLink
+	!ifdef CUSTOM_DEVICE
+		Call UnInstallDevice
+	!endif
+	!ifdef CUSTOM_SERVICE
+		Call UnInstallService
+	!endif
+	!ifdef CUSTOM_LINK
+		Call RemoveLink
+	!else
+		Nop
+	!endif
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
 ${SegmentPostSecondary}
-	Nop
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend
 
 ${SegmentPost}
-	Nop
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
+!macroend
+
+${SegmentUnload}
+	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
+		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
+	!else
+		Nop
+	!endif
 !macroend

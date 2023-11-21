@@ -3,7 +3,7 @@
  * 
  * This file is a part of NSIS.
  * 
- * Copyright (C) 1999-2021 Nullsoft and Contributors
+ * Copyright (C) 1999-2007 Nullsoft and Contributors
  * 
  * This software is provided 'as-is', without any express or implied
  * warranty.
@@ -22,37 +22,23 @@
 #define _T(x)    __T(x)
 #define _TEXT(x) __T(x)
 #endif
-
-#ifndef _TCHAR_DEFINED
-#define _TCHAR_DEFINED
-#if !defined(_NATIVE_WCHAR_T_DEFINED) && !defined(_WCHAR_T_DEFINED)
-typedef unsigned short TCHAR;
-#else
 typedef wchar_t TCHAR;
-#endif
-#endif
-
+typedef wchar_t _TUCHAR;
 
 // program
+#define _tmain      wmain
+#define _tWinMain   wWinMain
 #define _tenviron   _wenviron
 #define __targv     __wargv
 
 // printfs
 #define _ftprintf   fwprintf
 #define _sntprintf  _snwprintf
-#if (defined(_MSC_VER) && (_MSC_VER<=1310||_MSC_FULL_VER<=140040310)) || defined(__MINGW32__)
-#	define _stprintf   swprintf
-#else
-#	define _stprintf   _swprintf
-#endif
+#define _stprintf   _swprintf
 #define _tprintf    wprintf
 #define _vftprintf  vfwprintf
 #define _vsntprintf _vsnwprintf
-#if defined(_MSC_VER) && (_MSC_VER<=1310)
-#	define _vstprintf  vswprintf
-#else
-#	define _vstprintf  _vswprintf
-#endif
+#define _vstprintf  _vswprintf
 
 // scanfs
 #define _tscanf     wscanf
@@ -129,13 +115,12 @@ typedef wchar_t TCHAR;
 #define _T(x)    x
 #define _TEXT(x) x
 #endif
-
-#ifndef _TCHAR_DEFINED
-#define _TCHAR_DEFINED
-typedef char TCHAR;
-#endif
+typedef char            TCHAR;
+typedef unsigned char   _TUCHAR;
 
 // program
+#define _tmain      main
+#define _tWinMain   WinMain
 #define _tenviron   environ
 #define __targv     __argv
 

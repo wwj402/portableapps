@@ -37,6 +37,9 @@ Var linksrcname
 
 LangString LinkMessage1 1033 'Error while configuring link configuration file.'
 LangString LinkMessage1 2052 '配置链接配置文件时出错。'
+LangString LinkMessage2 1033 'The $4 directory program is already running. \
+									Do not run it at the same time. Please exit!'
+LangString LinkMessage2 2052 '$4 目录程序已运行，不要同时运行，请退出！'
 
 !macro PathIsUNC _PATH _FLAG
 	Push $0
@@ -156,8 +159,10 @@ Function InitLink
 	${EndIf}
 	
 	${UserForEachINIPair} "${USERINIPATH}" "${LINKSEC}" $SecString $SecVaule
-		StrCpy $0 "$EXEDIR\Data\$SecString"
-		${WordFind} "$0" "," "+1" $0
+		${WordFind} "$SecString" "," "+1" $0
+		${GetRoot} "$0" $1
+		StrCmp $1 "" 0 +2
+		StrCpy $0 "$EXEDIR\Data\$0"
 		ExpandEnvStrings $0 "$0"
 		${IfNot} ${FileExists} "$0\${FLAGFILE}"
 			WriteINIStr "$0\${FLAGFILE}" "${FLAGFILE}" "DIR" "$EXEDIR"
@@ -177,15 +182,34 @@ Function InitLink
 FunctionEnd
 
 Function CreateLink
-	Delete "${LINKINITEMP}"
-	StrCpy $2 1
+	; Delete "${LINKINITEMP}"
+	StrCpy $0 1
 	${UserForEachINIPair} "${USERINIPATH}" "${LINKSEC}" $SecString $SecVaule
+		ExpandEnvStrings $1 "$SecString"
+		ExpandEnvStrings $2 "$SecVaule"
+		${WordFind} "$1" "," "+1" $1
+		${GetRoot} "$1" $3
+		StrCmp $3 "" 0 +2
+		StrCpy $1 "$EXEDIR\Data\$1"
+		${ConfigRead} "$1\${FLAGFILE}" "DIR=" $3
+		${ConfigRead} "$2\${FLAGFILE}" "DIR=" $4
 		ClearErrors
-		WriteINIStr "${LINKINITEMP}" "LinkTemp" $2 "$SecString|$SecVaule"
-		${If} ${Errors}
-			MessageBox MB_OK "$(LinkMessage1)"
+/* 		${If} $4 == ""
+			WriteINIStr "${LINKINITEMP}" "LinkTemp" $0 "$SecString|$SecVaule"
+			IntOp $0 $0 + 1
+		${ElseIf} $3 != $4
+		${AndIfNot} ${FileExists} "$4"
+			WriteINIStr "${LINKINITEMP}" "LinkTemp" $0 "$SecString|$SecVaule"
+			IntOp $0 $0 + 1
+		${EndIf} */
+		WriteINIStr "${LINKINITEMP}" "LinkTemp" $0 "$SecString|$SecVaule"
+		IntOp $0 $0 + 1
+		${IfThen} ${Errors} ${|} MessageBox MB_OK "$(LinkMessage1)" ${|}
+		${If} ${FileExists} "$4"
+		${AndIfNot} $3 == $4
+			MessageBox MB_OK "$(LinkMessage2)"
+			Quit
 		${EndIf}
-		IntOp $2 $2 + 1
 	${UserNextINIPair}
 	StrCpy $0 1
 	${Do}
@@ -251,6 +275,9 @@ Function CreateLink
 				${Else}
 					WriteINIStr "${LINKINIPATH}" "${LINKOPTSEC}" "${LINKOPTSEC}$0" '"Ok||issym||$1"'
 					DeleteINIStr "${LAUNCHERINIPATH}" "${MOVESEC}" "$linksrcname"
+					ReadINIStr $3 "$2\${FLAGFILE}" "${FLAGFILE}" "INUSE"
+					StrCpy $3 "$3$EXEFILE"
+					WriteINIStr "$2\${FLAGFILE}" "${FLAGFILE}" "INUSE" "$3"
 				${EndIf}
 			${Else}
 				${WordFind} "$SecString" "," "+1" $linksrcname
@@ -275,6 +302,9 @@ Function CreateLink
 				${Else}
 					WriteINIStr "${LINKINIPATH}" "${LINKOPTSEC}" "${LINKOPTSEC}$0" '"Ok||isjun||$1"'
 					DeleteINIStr "${LAUNCHERINIPATH}" "${MOVESEC}" "$linksrcname"
+					ReadINIStr $3 "$2\${FLAGFILE}" "${FLAGFILE}" "INUSE"
+					StrCpy $3 "$3$EXEFILE"
+					WriteINIStr "$2\${FLAGFILE}" "${FLAGFILE}" "INUSE" "$3"
 				${EndIf}
 			${EndIf}
 		${EndIf}
@@ -284,6 +314,7 @@ Function CreateLink
 				StrLen $4 "$1"
 				StrCpy $5 "$2" $4
 				${If} $5 == $1
+					ExpandEnvStrings $2 "$2"
 					WriteINIStr "${LAUNCHERINIPATH}" "${MOVESEC}" $2 $3
 				${EndIf}
 			${UserNextINIPair}
@@ -291,6 +322,7 @@ Function CreateLink
 				StrLen $4 "$1"
 				StrCpy $5 "$2" $4
 				${If} $5 == $1
+					ExpandEnvStrings $2 "$2"
 					WriteINIStr "${LAUNCHERINIPATH}" "${FILESEC}" $2 $3
 				${EndIf}
 			${UserNextINIPair}
@@ -301,6 +333,7 @@ Function CreateLink
 				StrCpy $5 "$2" $4
 				${If} $5 == $1
 					; WriteINIStr ${USERINIPATH} "${MOVESEC}" $2 $3
+					ExpandEnvStrings $2 "$2"
 					DeleteINIStr "${LAUNCHERINIPATH}" "${MOVESEC}" $2
 				${EndIf}
 			${UserNextINIPair}
@@ -309,6 +342,7 @@ Function CreateLink
 				StrCpy $5 "$2" $4
 				${If} $5 == $1
 					; WriteINIStr ${USERINIPATH} "${MOVESEC}" $2 $3
+					ExpandEnvStrings $2 "$2"
 					DeleteINIStr "${LAUNCHERINIPATH}" "${FILESEC}" $2
 				${EndIf}
 			${UserNextINIPair}
@@ -328,7 +362,9 @@ Function RemoveLink
 		; MessageBox MB_OK "$SecString$\n$SecVaule"
 		${WordFind} "$SecString" "," "#" $2
 		ExpandEnvStrings $R2 "$SecVaule"
+		ReadINIStr $4 "$R2\${FLAGFILE}" "${FLAGFILE}" "INUSE"
 		${If} $2 == $SecString
+		${AndIf} $4 == $EXEFILE
 			${GetFileAttributes} "$R2" "DIRECTORY" $3
 			${If} $3 == 1
 				RMDir "$R2"
@@ -339,6 +375,7 @@ Function RemoveLink
 				Rename "$R2_$BaseName" "$R2"
 			${EndIf}
 		${ElseIf} $2 == 2
+		${AndIf} $4 == $EXEFILE
 			${WordFind} "$SecString" "," "+1" $R1
 			ExpandEnvStrings $R1 "$R1"
 			${GetRoot} "$R1" $3
@@ -347,6 +384,8 @@ Function RemoveLink
 			${EndIf}
 			${Locate} "$R1" "/G=1" "linklevel"
 		${EndIf}
+		${WordReplace} "$4" "$EXEFILE" "" "+" $4
+		WriteINIStr "$R2\${FLAGFILE}" "${FLAGFILE}" "INUSE" "$4"
 		IntOp $0 $0 + 1
 	${Loop}
 	Delete "${LINKINITEMP}"

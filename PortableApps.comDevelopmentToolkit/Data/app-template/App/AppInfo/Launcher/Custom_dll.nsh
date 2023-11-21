@@ -9,6 +9,8 @@ Var netversion
 Var filetlb
 Var libregpath
 Var unlibregpath
+Var install_para
+Var uninstall_para
 
 !ifndef BASEDIRFLAG
 	Var FunBaseDir
@@ -107,7 +109,9 @@ Function "getnewest"
 FunctionEnd
 
 Function "RegasmPath"
-	${Locate} "$regasmpath" "/L=D /G=0 /M=v*" "getnewest"
+	${If} $netversion == ""
+		${Locate} "$regasmpath" "/L=D /G=0 /M=v*" "getnewest"
+	${EndIf}
 	; MessageBox MB_OK "$regasmpath\v$netversion\RegAsm.exe"
 	${If} ${FileExists} "$regasmpath\v$netversion\RegAsm.exe"
 		StrCpy $regasmpath "$regasmpath\v$netversion\RegAsm.exe"
@@ -118,6 +122,8 @@ FunctionEnd
 
 !macro LibOpration _LIBREG _UNLIBREG _REGTYPE
 	${Select} "${_REGTYPE}"
+	${Case} "skip"
+	${Case} "manual"
 	${Case} "dll_x86"
 		${If} "${_LIBREG}" != "null"
 		${AndIf} "${_UNLIBREG}" != "null"
@@ -125,7 +131,7 @@ FunctionEnd
 			RegDLL "${_LIBREG}"
 		${ElseIf} "${_LIBREG}" != "null"
 			RegDLL "${_LIBREG}"
-		${Else}
+		${ElseIf} "${_UNLIBREG}" != "null"
 			UnRegDLL "${_UNLIBREG}"
 		${EndIf}
 	${Case} "tlb"
@@ -135,29 +141,59 @@ FunctionEnd
 			TypeLib::Register "${_LIBREG}"
 		${ElseIf} "${_LIBREG}" != "null"
 			TypeLib::Register "${_LIBREG}"
-		${Else}
+		${ElseIf} "${_UNLIBREG}" != "null"
 			TypeLib::UnRegister "${_UNLIBREG}"
 		${EndIf}
 	${Case} "exe"
 		${If} "${_LIBREG}" != "null"
 		${AndIf} "${_UNLIBREG}" != "null"
+			StrCmp $install_para "" 0 +4
 			ExecWait '"${_UNLIBREG}" /unregserver'
 			ExecWait '"${_LIBREG}" /regserver'
+			goto +3
+			ExecWait '"${_UNLIBREG}" $uninstall_para'
+			ExecWait '"${_LIBREG}" $install_para'
 		${ElseIf} "${_LIBREG}" != "null"
+			StrCmp $install_para "" 0 +3
 			ExecWait '"${_LIBREG}" /regserver'
-		${Else}
+			Goto +2
+			ExecWait '"${_LIBREG}" $install_para'
+		${ElseIf} "${_UNLIBREG}" != "null"
+			StrCmp $install_para "" 0 +3
 			ExecWait '"${_UNLIBREG}" /unregserver'
+			Goto +2
+			ExecWait '"${_UNLIBREG}" $uninstall_para'
 		${EndIf}
 	${Case} "net_dll"
 		${If} ${FileExists} "$regasmpath"
 			${If} "${_LIBREG}" != "null"
 			${AndIf} "${_UNLIBREG}" != "null"
-				ExecWait '"$regasmpath" "${_UNLIBREG}" /codebase /s /u'
-				ExecWait '"$regasmpath" "${_LIBREG}" /codebase /s'
+				; ExecWait '"$regasmpath" "${_UNLIBREG}" /n /s /u'
+				; ExecWait '"$regasmpath" "${_LIBREG}" /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_UNLIBREG}" /n /s /u' '' ''
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_LIBREG}" /n /s' '' ''
 			${ElseIf} "${_LIBREG}" != "null"
-				ExecWait '"$regasmpath" "${_LIBREG}" /codebase /s'
-			${Else}
-				ExecWait '"$regasmpath" "${_UNLIBREG}" /codebase /s /u'
+				; ExecWait '"$regasmpath" "${_LIBREG}" /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_LIBREG}" /n /s' '' ''
+			${ElseIf} "${_UNLIBREG}" != "null"
+				; ExecWait '"$regasmpath" "${_UNLIBREG}" /n /s /u'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_UNLIBREG}" /n /s /u' '' ''
+			${EndIf}
+		${EndIf}
+	${Case} "net_dll_codebase"
+		${If} ${FileExists} "$regasmpath"
+			${If} "${_LIBREG}" != "null"
+			${AndIf} "${_UNLIBREG}" != "null"
+				; ExecWait '"$regasmpath" "${_UNLIBREG}" /codebase /n /s /u'
+				; ExecWait '"$regasmpath" "${_LIBREG}" /codebase /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_UNLIBREG}" /codebase /n /s /u' '' ''
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_LIBREG}" /codebase /n /s' '' ''
+			${ElseIf} "${_LIBREG}" != "null"
+				; ExecWait '"$regasmpath" "${_LIBREG}" /codebase /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_LIBREG}" /codebase /n /s' '' ''
+			${ElseIf} "${_UNLIBREG}" != "null"
+				; ExecWait '"$regasmpath" "${_UNLIBREG}" /codebase /n /s /u'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "${_UNLIBREG}" /codebase /n /s /u' '' ''
 			${EndIf}
 		${EndIf}
 	${Case} "net_tlb"
@@ -166,21 +202,23 @@ FunctionEnd
 			${AndIf} "${_UNLIBREG}" != "null"
 				${GetFileExt} "${_UNLIBREG}" $filetlb
 				${WordReplace} "${_UNLIBREG}" ".$filetlb" ".dll" "-1" $filetlb
-				ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /s /u'
+				; ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /n /s /u'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "$filetlb" /codebase /tlb /n /s /u' '' ''
 				${WordReplace} "${_LIBREG}" ".$filetlb" ".dll" "-1" $filetlb
-				ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /s'
+				; ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "$filetlb" /codebase /tlb /n /s' '' ''
 			${ElseIf} "${_LIBREG}" != "null"
 				${GetFileExt} "${_LIBREG}" $filetlb
 				${WordReplace} "${_LIBREG}" ".$filetlb" ".dll" "-1" $filetlb
-				ExecWait '"$regasmpath" "filetlb" /codebase /tlb /s'
-			${Else}
+				; ExecWait '"$regasmpath" "filetlb" /codebase /tlb /n /s'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "$filetlb" /codebase /tlb /n /s' '' ''
+			${ElseIf} "${_UNLIBREG}" != "null"
 				${GetFileExt} "${_UNLIBREG}" $filetlb
 				${WordReplace} "${_UNLIBREG}" ".$filetlb" ".dll" "-1" $filetlb
-				ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /s /u'
+				; ExecWait '"$regasmpath" "$filetlb" /codebase /tlb /n /s /u'
+				ExecDos::exec /DISABLEFSR '"$regasmpath" "$filetlb" /codebase /tlb /n /s /u' '' ''
 			${EndIf}
 		${EndIf}
-	${Case} "skip"
-		nop
 	${CaseElse}
 		${If} "${_LIBREG}" != "null"
 		${AndIf} "${_UNLIBREG}" != "null"
@@ -191,7 +229,7 @@ FunctionEnd
 		${ElseIf} "${_LIBREG}" != "null"
 			ExecWait 'regsvr32 /s "${_LIBREG}"'
 			; ExecDos::exec /DISABLEFSR 'regsvr32 /s "${_LIBREG}"' '' ''
-		${Else}
+		${ElseIf} "${_UNLIBREG}" != "null"
 			ExecWait 'regsvr32 /s /u "${_UNLIBREG}"'
 			; ExecDos::exec /DISABLEFSR 'regsvr32 /s /u "${_UNLIBREG}"' '' ''
 		${EndIf}
@@ -199,22 +237,29 @@ FunctionEnd
 !macroend
 
 Function "ManualClean"
-	ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "RegRoot"
-	${registry::Open} "$2\${REGSUB_Interface}" "/K=0 /V=0 /S=1 /N='$0'" $3
-	StrCpy $R1 "1"
-	${DoUntil} $3 == 0
-		${registry::Find} "$3" $4 $5 $6 $7
-		${If} $4 != ""
-			${GetParent} "$2\$4" $4
-			WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
-			"${REGSVR32SECPRIF}$R0" "$R1" "$4"
-			IntOp $R1 $R1 + 1
-		${EndIf}
-	${LoopUntil} $4 == ""
-	${registry::Close} "$3"
-	${DoUntil} $R1 = 1
-		IntOp $R1 $R1 - 1
+	ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "1"
+	${If} $2 == ""
+		ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "RegRoot"
+		${registry::Open} "$2\${REGSUB_Interface}" "/K=0 /V=0 /S=1 /N='$0'" $3
+		StrCpy $R1 "1"
+		${DoUntil} $3 == 0
+			${registry::Find} "$3" $4 $5 $6 $7
+			${If} $4 != ""
+				${GetParent} "$2\$4" $4
+				WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
+				"${REGSVR32SECPRIF}$R0" "$R1" "$4"
+				IntOp $R1 $R1 + 1
+			${EndIf}
+		${LoopUntil} $4 == ""
+		${registry::Close} "$3"
+		Return
+	${EndIf}
+	StrCpy $R1 "0"
+	${DoUntil} $R1 > 333
+		IntOp $R1 $R1 + 1
+		ClearErrors
 		ReadINIStr $5 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "$R1"
+		${IfThen} ${Errors} ${|} ${ExitDo} ${|}
 		; MessageBox MB_OK "$R1=$5"
 		SetRegView 32
 		${Registry::DeleteKey} "$5" $regcode
@@ -264,6 +309,8 @@ Function "RegsvrDll"
 					Call RegasmPath
 				${EndIf}
 			${Else}
+				${EnableX64FSRedirection}
+				SetRegView 32
 				${ReadLauncherConfig} $DllPath "${REGSVR32SECPRIF}$R0" "Path"
 				StrCpy $0 "Path=$DllPath"
 				${If} $1 == "net_dll"
@@ -279,17 +326,6 @@ Function "RegsvrDll"
 			${If} $DllPath == ""
 			${AndIf} $1 != "skip"
 				MessageBox MB_OK "$(DllMessage2)"
-				${If} $X64FSRFlag == "disable"
-					${DisableX64FSRedirection}
-				${Else}
-					${EnableX64FSRedirection}
-				${EndIf}
-				; SetRegView lastused
-				${If} $RegViewFlag == 64
-					SetRegView 64
-				${Else}
-					SetRegView 32
-				${EndIf}
 				IntOp $R0 $R0 + 1
 				${Continue}
 			${EndIf}
@@ -297,8 +333,21 @@ Function "RegsvrDll"
 			${ReadLauncherConfig} $1 "${REGSVR32SECPRIF}$R0" "CLSID"
 			${ReadLauncherConfig} $9 "${REGSVR32SECPRIF}$R0" "RegType"
 			${WordFind} "$9" "/" "+1{" $9
+			${ReadLauncherConfig} $install_para "${REGSVR32SECPRIF}$R0" "CmdPara"
+			${If} $install_para != ""
+			${AndIf} $install_para != ${PLACEHOLDER}
+				${WordFind} "$install_para" "||" "#" $uninstall_para
+				${If} $uninstall_para == 2
+					${WordFind} "$install_para" "||" "-1" $uninstall_para
+					${WordFind} "$install_para" "||" "+1" $install_para
+				${Else}
+					StrCpy $install_para ""
+					StrCpy $uninstall_para ""
+				${EndIf}
+			${EndIf}
 			${ReadLauncherConfig} $8 ${REGSVR32SECPRIF}$R0 OldImage
-			${If} $0 != ""
+			${If} $9 != "skip"
+			${AndIf} $0 != ""
 			${AndIf} $0 != ${PLACEHOLDER}
 				ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "RegRoot"
 				${registry::Open} "$2\${REGSUB_TypeLib}\$0" "/K=1 /V=0 /S=0 /NI='win'" $3
@@ -317,7 +366,7 @@ Function "RegsvrDll"
 							IfFileExists "$8" +2 0
 							WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 							"${REGSVR32SECPRIF}$R0" "OldImage" "null"
-							StrCpy $libregpath "$DllPath"
+							StrCpy $libregpath "$null"
 							StrCpy $unlibregpath "null"
 							; !insertmacro "LibOpration" "$DllPath" "null" "$9"
 						${EndIf}
@@ -335,7 +384,8 @@ Function "RegsvrDll"
 					StrCpy $unlibregpath "null"
 					; !insertmacro "LibOpration" "$DllPath" "null" "$9"
 				${EndIf}
-			${ElseIf} $1 != ""
+			${ElseIf} $9 != "skip"
+			${AndIf} $1 != ""
 			${AndIf} $1 != ${PLACEHOLDER}
 				ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "RegRoot"
 				${registry::Open} "$2\${REGSUB_CLSID}\$1" "/K=1 /V=0 /S=0 /NI='InprocServer'" $3
@@ -347,19 +397,47 @@ Function "RegsvrDll"
 					; MessageBox MB_OK "$2\$4 $5 $6 $7"
 					${If} $4 != ""
 						; ${registry::Read} "[fullpath]" "[value]" $var1("[string]") $var2("[TYPE]")
-						${registry::Read} "$2\$4\$5" "" $6 $7
+						${registry::Read} "$2\$4\$5" "CodeBase" $6 $7
+						${If} $7 == ""
+							${registry::Read} "$2\$4\$5" "" $6 $7
+						${Else}
+							StrCpy $6 "$6" "" 8 ; file:///
+						${EndIf}
 						${If} $6 != $DllPath
 							WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 							"${REGSVR32SECPRIF}$R0" "OldImage" "$6"
-							${If} $9 == "skip"
-								; ${registry::Write} "[fullpath]" "[value]" "[string]" "[TYPE]" $var
-								${Registry::Write} "$2\$4\$5" "" "$DllPath" "$7" $regcode
-								StrCpy $libregpath "null"
-								StrCpy $unlibregpath "null"
+							${Switch} $9
+							${Case} "manual"
+								${registry::Read} "$2\$4\$5" "CodeBase" $6 $7
+								${If} $7 != ""
+									; ${registry::Write} "[fullpath]" "[value]" "[string]" "[TYPE]" $var
+									${Registry::Write} "$2\$4\$5" "CodeBase" "file:///$DllPath" "$7" $regcode
+								${Else}
+									${registry::Read} "$2\$4\$5" "" $6 $7
+									${Registry::Write} "$2\$4\$5" "" "$DllPath" "$7" $regcode
+								${EndIf}
+								; StrCpy $libregpath "null"
+								; StrCpy $unlibregpath "null"
+								${Break}
+							${CaseElse}
+								StrCpy $libregpath "$DllPath"
+								StrCpy $unlibregpath "$6"
+							${EndSwitch}
+/* 							${If} $9 == "manual"
+								${registry::Read} "$2\$4\$5" "CodeBase" $6 $7
+								${If} $7 != ""
+									; ${registry::Write} "[fullpath]" "[value]" "[string]" "[TYPE]" $var
+									${Registry::Write} "$2\$4\$5" "CodeBase" "file:///$DllPath" "$7" $regcode
+								${Else}
+									${registry::Read} "$2\$4\$5" "" $6 $7
+									${Registry::Write} "$2\$4\$5" "" "$DllPath" "$7" $regcode
+								${EndIf}
+								; StrCpy $libregpath "null"
+								; StrCpy $unlibregpath "null"
 							${Else}
 								StrCpy $libregpath "$DllPath"
 								StrCpy $unlibregpath "$6"
-							${EndIf}
+							${EndIf} */
 						${Else}
 							IfFileExists "$8" +2 0
 							WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
@@ -370,10 +448,17 @@ Function "RegsvrDll"
 					${Else}
 						WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 						"${REGSVR32SECPRIF}$R0" "OldImage" "null"
-						${If} $9 == "skip"
-							${Registry::Write} "$2\$4\$5" "" "$DllPath" "$7" $regcode
-							StrCpy $libregpath "null"
-							StrCpy $unlibregpath "null"
+						${If} $9 == "manual"
+							${registry::Read} "$2\$4\$5" "CodeBase" $6 $7
+							${If} $7 != ""
+								; ${registry::Write} "[fullpath]" "[value]" "[string]" "[TYPE]" $var
+								${Registry::Write} "$2\$4\$5" "CodeBase" "file:///$DllPath" "$7" $regcode
+							${Else}
+								${registry::Read} "$2\$4\$5" "" $6 $7
+								${Registry::Write} "$2\$4\$5" "" "$DllPath" "$7" $regcode
+							${EndIf}
+							; StrCpy $libregpath "null"
+							; StrCpy $unlibregpath "null"
 						${Else}
 							StrCpy $libregpath "$DllPath"
 							StrCpy $unlibregpath "null"
@@ -383,38 +468,38 @@ Function "RegsvrDll"
 					; MessageBox MB_OK "$2\${REGSUB_CLSID}\$1"
 					WriteINIStr "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 					"${REGSVR32SECPRIF}$R0" "OldImage" "null"
-					${If} $9 == "skip"
+					${If} $9 == "manual"
 						${Registry::Write} "$2\${REGSUB_CLSID}\$1" "" "$DllDes" "REG_SZ" $regcode
 						${Registry::Write} "$2\${REGSUB_CLSID}\$1\InprocServer32" \
 														"" "$DllPath" "REG_SZ" $regcode
 						${Registry::Write} "$2\${REGSUB_CLSID}\$1\InprocServer32" \
 												"ThreadingModel" "both" "REG_SZ" $regcode
-						StrCpy $libregpath "null"
-						StrCpy $unlibregpath "null"
+						; StrCpy $libregpath "null"
+						; StrCpy $unlibregpath "null"
 					${Else}
 						StrCpy $libregpath "$DllPath"
 						StrCpy $unlibregpath "null"
 					${EndIf}
 				${EndIf}
-			${Else}
+			${ElseIf} $9 != "skip"
 				StrCpy $libregpath "$DllPath"
 				StrCpy $unlibregpath "null"
 				; !insertmacro "LibOpration" "$DllPath" "null" "$9"
 			${EndIf}
 			!insertmacro "LibOpration" "$libregpath" "$unlibregpath" "$9"
-			${If} $X64FSRFlag == "disable"
-				${DisableX64FSRedirection}
-			${Else}
-				${EnableX64FSRedirection}
-			${EndIf}
-			; SetRegView lastused
-			${If} $RegViewFlag == 64
-				SetRegView 64
-			${Else}
-				SetRegView 32
-			${EndIf}
 			IntOp $R0 $R0 + 1
 		${Loop}
+		${If} $X64FSRFlag == "disable"
+			${DisableX64FSRedirection}
+		${Else}
+			${EnableX64FSRedirection}
+		${EndIf}
+		; SetRegView lastused
+		${If} $RegViewFlag == 64
+			SetRegView 64
+		${Else}
+			SetRegView 32
+		${EndIf}
 	${EndIf}
 FunctionEnd
 
@@ -450,6 +535,8 @@ Function "UnRegsvrDll"
 				SetRegView 64
 				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path64
 			${Else}
+				${EnableX64FSRedirection}
+				SetRegView 32
 				${ReadLauncherConfig} $DllPath ${REGSVR32SECPRIF}$R0 Path
 			${EndIf}
 			Push $DllPath
@@ -457,17 +544,6 @@ Function "UnRegsvrDll"
 			Pop $DllPath
 			; ExpandEnvStrings $DllPath "$DllPath"
 			${If} $DllPath == ""
-				${If} $X64FSRFlag == "disable"
-					${DisableX64FSRedirection}
-				${Else}
-					${EnableX64FSRedirection}
-				${EndIf}
-				; SetRegView lastused
-				${If} $RegViewFlag == 64
-					SetRegView 64
-				${Else}
-					SetRegView 32
-				${EndIf}
 				IntOp $R0 $R0 + 1
 				${Continue}
 			${EndIf}
@@ -475,13 +551,31 @@ Function "UnRegsvrDll"
 			${ReadLauncherConfig} $1 "${REGSVR32SECPRIF}$R0" "CLSID"
 			${ReadLauncherConfig} $9 ${REGSVR32SECPRIF}$R0 RegType
 			${WordFind} "$9" "/" "+1{" $9
+			${ReadLauncherConfig} $install_para "${REGSVR32SECPRIF}$R0" "CmdPara"
+			${If} $install_para != ""
+			${AndIf} $install_para != ${PLACEHOLDER}
+				${WordFind} "$install_para" "||" "#" $uninstall_para
+				${If} $uninstall_para == 2
+					${WordFind} "$install_para" "||" "-1" $uninstall_para
+					${WordFind} "$install_para" "||" "+1" $install_para
+				${Else}
+					StrCpy $install_para ""
+					StrCpy $uninstall_para ""
+				${EndIf}
+			${EndIf}
 			${ReadLauncherConfig} $8 ${REGSVR32SECPRIF}$R0 OldImage
-			${If} $0 != ""
+			${If} $9 != "skip"
+			${AndIf} $0 != ""
 			${AndIf} $0 != ${PLACEHOLDER}
 				${If} $8 != ""
 				${AndIf} $8 != ${PLACEHOLDER}
 					!insertmacro "LibOpration" "$8" "$DllPath" "$9"
 				${Else}
+					ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
+					"${REGSVR32SECPRIF}$R0" "ManualClean"
+					${If} $2 == true
+						Call ManualClean
+					${EndIf}
 					!insertmacro "LibOpration" "null" "$DllPath" "$9"
 					ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" \
 					"${REGSVR32SECPRIF}$R0" "ManualClean"
@@ -489,12 +583,13 @@ Function "UnRegsvrDll"
 						Call ManualClean
 					${EndIf}
 				${EndIf}
-			${ElseIf} $1 != ""
+			${ElseIf} $9 != "skip"
+			${AndIf} $1 != ""
 			${AndIf} $1 != ${PLACEHOLDER}
 				ReadINIStr $2 "$EXEDIR\App\AppInfo\Launcher\$BaseName.ini" "${REGSVR32SECPRIF}$R0" "RegRoot"
 				${If} $8 != ""
 				${AndIf} $8 != ${PLACEHOLDER}
-					${If} $9 == "skip"
+					${If} $9 == "manual"
 						${registry::Open} "$2\${REGSUB_CLSID}\$1" "/K=1 /V=0 /S=0 /NI='InprocServer'" $3
 						${If} $3 != 0
 							; ${registry::Find} "[handle]" $var1("[path]") $var2("[value]" or "[key]") 
@@ -507,29 +602,29 @@ Function "UnRegsvrDll"
 						!insertmacro "LibOpration" "$8" "$DllPath" "$9"
 					${EndIf}
 				${Else}
-					${If} $9 == "skip"
+					${If} $9 == "manual"
 						${registry::DeleteKey} "$2\${REGSUB_CLSID}\$1" $regcode
 						; MessageBox MB_OK "$2\${REGSUB_CLSID}\$1=$regcode"
 					${Else}
 						!insertmacro "LibOpration" "null" "$DllPath" "$9"
 					${EndIf}
 				${EndIf}
-			${Else}
+			${ElseIf} $9 != "skip"
 				!insertmacro "LibOpration" "null" "$DllPath" "$9"
-			${EndIf}
-			${If} $X64FSRFlag == "disable"
-				${DisableX64FSRedirection}
-			${Else}
-				${EnableX64FSRedirection}
-			${EndIf}
-			; SetRegView lastused
-			${If} $RegViewFlag == 64
-				SetRegView 64
-			${Else}
-				SetRegView 32
 			${EndIf}
 			IntOp $R0 $R0 + 1
 		${Loop}
+		${If} $X64FSRFlag == "disable"
+			${DisableX64FSRedirection}
+		${Else}
+			${EnableX64FSRedirection}
+		${EndIf}
+		; SetRegView lastused
+		${If} $RegViewFlag == 64
+			SetRegView 64
+		${Else}
+			SetRegView 32
+		${EndIf}
 	${EndIf}
 FunctionEnd
 

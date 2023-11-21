@@ -113,6 +113,10 @@ Function Unload           ;{{{1
 FunctionEnd
  */
 
+Var OSarch
+Var RegViewFlag
+Var X64FSRFlag
+
 !addincludedir "${PACKAGE}\App\AppInfo\Launcher"
 !include "Custom_special.nsh"
 !ifndef SegmentSpecial
@@ -120,6 +124,9 @@ FunctionEnd
 !endif
 
 ${SegmentFile}
+
+LangString LangMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
+LangString LangMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
 
 !include "x64.nsh"
 !ifndef AppID
@@ -155,17 +162,11 @@ ${SegmentFile}
 ; !include "Custom_dll.nsh"
 ; !include "Custom_patch.nsh"
 
-LangString LangMessage1 1033 "It is possible that the program is exiting.$\r$\nPlease wait for the program to exit completely and then run again."
-LangString LangMessage1 2052 "可能程序正在退出中。$\r$\n请等待程序完全退出后再次运行。"
-Var OSarch
-Var RegViewFlag
-Var X64FSRFlag
-
 ${Segment.onInit}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -335,7 +336,7 @@ ${SegmentPrePrimary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -396,7 +397,7 @@ ${SegmentPreExecPrimary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -404,7 +405,7 @@ ${SegmentPreExecSecondary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -489,7 +490,7 @@ ${SegmentPostPrimary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -497,7 +498,7 @@ ${SegmentPostSecondary}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -505,7 +506,7 @@ ${SegmentPost}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend
 
@@ -513,6 +514,6 @@ ${SegmentUnload}
 	!ifmacrodef ${SegmentSpecial}_${__FUNCTION__}
 		!insertmacro ${SegmentSpecial}_${__FUNCTION__}
 	!else
-		nop
+		Nop
 	!endif
 !macroend

@@ -12,7 +12,7 @@ ${SegmentFile}
 !define RESHACKER "$EXEDIR\..\NSISPortable\Data\User_Nsis\Packhdr\ResHacker.exe"
 !define RHSWITCH `-open "<exepath>" -save "<icondir>" -action extract -mask ICONGROUP,, -log CON`
 !define ANY2ICO "$EXEDIR\..\NSISPortable\Data\User_Nsis\Packhdr\QuickAny2Ico.exe"
-!define A2ISWITCH `-res="<exepath>,0" -icon="<iconpath>" -formats=16,32,72,128`
+!define A2ISWITCH `"-res=<exepath>,0" "-icon=<iconpath>" -formats=16,32,72,128`
 ; !define NTLINKSMAKER64 "$EXEDIR\..\CommonFiles\NTLinksMaker\NTLinksMaker64.exe"
 !define NTLINKSMAKER "$EXEDIR\..\CommonFiles\NTLinksMaker\NTLinksMakerLauncher.exe"
 !define NTLMSWITCH `/q /n /b /s "{<src_file>|@<src_list_utf16>}" "<dst_path>"`
@@ -43,7 +43,11 @@ LangString PalMessage6 1033 '"Yes" creates a control item for $R7, \
 												$\n "No" does not create a control item for $R7.'
 LangString PalMessage6 2052 "“是”为 $R7 创建控制项，\
 												$\n“否”不为 $R7 创建控制项。"
-LangString NOTEXIST_MESSAGE 1033 "$0 does not exist, please check. "
+LangString PalMessage7 1033 'Do you want to use $R3 as the control item name?'
+LangString PalMessage7 2052 "是否使用 $R3 作为控制项名字？"
+LangString PalMessage8 1033 'Do you want to set the display version number to xxxx.xx.x.x?'
+LangString PalMessage8 2052 "是否将显示版本号设置为 xxxx.xx.x.x？"
+LangString NOTEXIST_MESSAGE 1033 "$0 does not exist, please check."
 LangString NOTEXIST_MESSAGE 2052 "$0 不存在，请检查。"
 Function copyicon
 	; $R9    "path\name"
@@ -217,6 +221,8 @@ Function setcontrol
 
 	MoreInfo::GetProductName "$portableapp_dir\App\$R2"
 	Pop $R3
+	MessageBox MB_YESNO "$(PalMessage7)" IDYES +2
+	StrCpy $R3 ""
 	MoreInfo::GetFileVersion "$portableapp_dir\App\$R2"
 	Pop $R4
 	${IfNot} $R4 == ""
@@ -226,7 +232,9 @@ Function setcontrol
 		StrCpy $R3 "$R7" -4
 	${EndIf}
 	${If} $R4 == ""
-		StrCpy $R4 "xx.xx.xx"
+		!define /date VER "%Y.%m.%d.0"
+		StrCpy $R4 "${VER}"
+		!undef VER
 	${EndIf}
 	WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Control Name$R0 "$R3_$R4"
 
@@ -272,9 +280,20 @@ Function setdetails
 	${GetBaseName} "$R9" $R1
 	IfFileExists "$portableapp_dir\App\AppInfo\Launcher\$R1.ini" 0 NODETAILS
 	IntOp $R0 $R0 + 1
-	ReadINIStr $R2 "$portableapp_dir\App\AppInfo\appinfo.ini" Control Start
-	${If} $R2 == ""
-		WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Control Start $R7
+	ReadINIStr $R2 "$portableapp_dir\App\AppInfo\Launcher\$R1.ini" Launch ProgramExecutable64
+	StrCmp $R2 "" 0 +2
+	ReadINIStr $R2 "$portableapp_dir\App\AppInfo\Launcher\$R1.ini" Launch ProgramExecutable
+	${If} ${FileExists} "$portableapp_dir\$R2"
+		ReadINIStr $R2 "$portableapp_dir\App\AppInfo\appinfo.ini" Control Start
+		${If} $R2 == ""
+			WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Control Start $R7
+		${Else}
+			ReadINIStr $R2 "$portableapp_dir\App\AppInfo\Launcher\$R2.ini" Launch ProgramExecutable64
+			StrCmp $R2 "" 0 +2
+			ReadINIStr $R2 "$portableapp_dir\App\AppInfo\Launcher\$R2.ini" Launch ProgramExecutable64
+			StrCmp $R2 "" 0 +2
+			WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Control Start $R7
+		${EndIf}
 	${EndIf}
 
 	ReadINIStr $R2 "$portableapp_dir\App\AppInfo\appinfo.ini" Details Path
@@ -314,7 +333,7 @@ Function setdetails
 	${EndIf}
 
 	${If} $exe_ver != ""
-		ReadINIStr $ini_ver "$portableapp_dir\App\AppInfo\appinfo.ini" Version DisplayVersion
+		ReadINIStr $ini_ver "$portableapp_dir\App\AppInfo\appinfo.ini" Version PackageVersion
 		${If} $exe_ver != $ini_ver
 			MessageBox MB_YESNO "$(PalMessage1)" IDYES 0 IDNO VERNOCHANGE
 			WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Version DisplayVersion $exe_ver
@@ -365,7 +384,12 @@ Function CustomLauncher
 	${UserForEachINIPair} "$portableapp_dir\App\AppInfo\Launcher\AppPortable.ini" CustomDll1 $0 $1
 		ReadINIStr $2 "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" CustomDll1 $0
 		${If} $2 == ""
+		${AndIfNot} $0 == "TypeLib"
+		${AndIfNot} $0 == "CLSID"
 			WriteINIStr "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" CustomDll1 $0 $1
+		${ElseIf} $0 == "TypeLib"
+		${OrIf} $0 == "CLSID"
+			WriteINIStr "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" CustomDll1 $0 "null"
 		${EndIf}
 	${UserNextINIPair}
 FunctionEnd
@@ -376,7 +400,7 @@ Function CustomLink
 		${If} $2 == ""
 			WriteINIStr "$portableapp_dir\$app_name.ini" DirectoriesLink $0 $1
 			WriteINIStr "$portableapp_dir\$app_name.ini" DirectoriesMove $0 $1
-			WriteINIStr "$portableapp_dir\$app_name.ini" FilesMove $0 $1
+			WriteINIStr "$portableapp_dir\$app_name.ini" FilesMove $0\*.ini $1
 		${EndIf}
 	${UserNextINIPair}
 	${UserForEachINIPair} "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" FilesMove $0 $1
@@ -667,16 +691,21 @@ ${SegmentPostPrimary}
 	StrCpy $R0 "0"
 	${Locate} "$portableapp_dir" "/L=F /M=*Portable.exe /G=0" "setdetails"
 
+	${If} $R0 > 2
+		MessageBox MB_YESNO "$(PalMessage8)" IDNO +2
+		WriteINIStr "$portableapp_dir\App\AppInfo\appinfo.ini" Version DisplayVersion "xxxx.xx.x.x"
+	${EndIf}
 	ExecShell "open" "$portableapp_dir\App\AppInfo\appinfo.ini"
 
 	ReadINIStr $0 "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" Launch ProgramExecutable
 	${If} $0 == ""
 		ReadINIStr $0 "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" Launch ProgramExecutable64
 	${EndIf}
-	ClearErrors
+/* 	ClearErrors
 	ReadINIStr $1 "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini" Custom Service
 	${If} ${Errors}
-	${AndIf} $0 != ""
+	${AndIf} $0 != "" */
+	${If} $0 != ""
 		Call CustomLauncher
 		ExecShell "open" "$portableapp_dir\App\AppInfo\Launcher\$app_name.ini"
 	${EndIf}

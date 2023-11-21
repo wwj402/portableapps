@@ -1,7 +1,7 @@
 /*******************************************************
 * FILE NAME: inetc.cpp
 *
-* Copyright (c) 2004-2015 Takhir Bedertdinov and NSIS contributors
+* Copyright 2004 - Present NSIS
 *
 * PURPOSE:
 *    ftp/http file download plug-in
@@ -99,81 +99,51 @@
 *     Feb 14, 2011 Fixed reget bug introduced in previous commit
 *     Feb 18, 2011 /NOCOOKIES option added
 *     Mar 02, 2011 User-agent buffer increased. Small memory leak fix
-*     Mar 23, 2011 Use caption on embedded progressbar - zenpoy
+*	  Mar 23, 2011 Use caption on embedded progressbar - zenpoy
 *     Apr 05, 2011 reget fix - INTERNET_FLAG_RELOAD for first connect only
 *     Apr 27, 2011 /receivetimeout option added for big files and antivirus
 *     Jun 15, 2011 Stack clean up fix on cancel - zenpoy
 *     Oct 19, 2011 FTP PUT error parsing fix - tperquin
-*     Aug 19, 2013 Fix focus stealing when in silent - negativesir, JohnTHaller
-*     Jul 20, 2014 - 1.0.4.4 - Stuart 'Afrow UK' Welch
-*              /tostack & /tostackconv added
-*              Version information resource added
-*              Updated to NSIS 3.0 plugin API
-*              Upgraded to Visual Studio 2012
-*              64-bit build added
-*              MSVCRT dependency removed
-*     Sep 04, 2015 - 1.0.5.0 - anders_k
-*              HTTPS connections are more secure by default
-*              Added /weaksecurity switch, reverts to old cert. security checks
-*     Sep 06, 2015 - 1.0.5.1 - anders_k
-*              Don't allow infinite FtpCreateDirectory tries
-*              Use memset intrinsic when possible to avoid VC code generation bug
-*     Oct 17, 2015 - 1.0.5.2 - anders_k
-*              Tries to set FTP mode to binary before querying the size.
-*              Calls FtpGetFileSize if it exists.
-*     Sep 24, 2018 - 1.0.5.3 - anders_k
-*              /tostackconv supports UTF-8 and UTF-16LE BOM sniffing and conversion.
 *******************************************************/
 
 
 #define _WIN32_WINNT 0x0500
 
 #include <windows.h>
-//#include <tchar.h>
+#include <tchar.h>
 #include <wininet.h>
 #include <commctrl.h>
-#include "pluginapi.h"
+#include "exdll.h"
 #include "resource.h"
 
-#include <string.h> // strstr etc
-
 #ifndef PBM_SETMARQUEE
-#define PBM_SETMARQUEE (WM_USER + 10)
+#define PBM_SETMARQUEE  (WM_USER + 10)
 #define PBS_MARQUEE  0x08
-#endif
-#ifndef HTTP_QUERY_PROXY_AUTHORIZATION
-#define HTTP_QUERY_PROXY_AUTHORIZATION 61
-#endif
-#ifndef SECURITY_FLAG_IGNORE_REVOCATION
-#define SECURITY_FLAG_IGNORE_REVOCATION 0x00000080
-#endif
-#ifndef SECURITY_FLAG_IGNORE_UNKNOWN_CA
-#define SECURITY_FLAG_IGNORE_UNKNOWN_CA 0x00000100
 #endif
 
 // IE 4 safety and VS 6 compatibility
 typedef BOOL (__stdcall *FTP_CMD)(HINTERNET,BOOL,DWORD,LPCTSTR,DWORD,HINTERNET *);
 FTP_CMD myFtpCommand;
 
-#define PLUGIN_NAME TEXT("Inetc plug-in")
-#define INETC_USERAGENT TEXT("NSIS_Inetc (Mozilla)")
+#define PLUGIN_NAME _T("Inetc plug-in")
+#define INETC_USERAGENT _T("NSIS_Inetc (Mozilla)")
 #define PB_RANGE 400 // progress bar values range
 #define PAUSE1_SEC 2 // transfer error indication time, for reget only
 #define PAUSE2_SEC 3 // paused state time, increase this if need (60?)
 #define PAUSE3_SEC 1 // pause after resume button pressed
 #define NOT_AVAILABLE 0xffffffff
-#define POST_HEADER TEXT("Content-Type: application/x-www-form-urlencoded")
-#define PUT_HEADER TEXT("Content-Type: octet-stream\nContent-Length: %d")
+#define POST_HEADER _T("Content-Type: application/x-www-form-urlencoded")
+#define PUT_HEADER _T("Content-Type: octet-stream\nContent-Length: %d")
 #define INTERNAL_OK 0xFFEE
 #define PROGRESS_MS 1000 // screen values update interval
-#define DEF_QUESTION TEXT("Are you sure that you want to stop download?")
-#define HOST_AUTH_HDR  TEXT("Authorization: basic %s")
-#define PROXY_AUTH_HDR TEXT("Proxy-authorization: basic %s")
+#define DEF_QUESTION _T("Are you sure that you want to stop download?")
+#define HOST_AUTH_HDR  _T("Authorization: basic %s")
+#define PROXY_AUTH_HDR _T("Proxy-authorization: basic %s")
 
-//#define MY_WEAKSECURITY_CERT_FLAGS SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_CERT_DATE_INVALID | SECURITY_FLAG_IGNORE_CERT_CN_INVALID
-#define MY_WEAKSECURITY_CERT_FLAGS SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_REVOCATION
+//#define MY_CERT_FLAGS SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_REVOCATION | SECURITY_FLAG_IGNORE_CERT_DATE_INVALID | SECURITY_FLAG_IGNORE_CERT_CN_INVALID
+#define MY_CERT_FLAGS SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_REVOCATION
 #define MY_REDIR_FLAGS INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTP | INTERNET_FLAG_IGNORE_REDIRECT_TO_HTTPS
-#define MY_HTTPS_FLAGS (MY_REDIR_FLAGS | INTERNET_FLAG_SECURE)
+#define MY_HTTPS_FLAGS (MY_CERT_FLAGS | MY_REDIR_FLAGS | INTERNET_FLAG_SECURE)
 
 enum STATUS_CODES {
 	ST_OK = 0,
@@ -212,53 +182,44 @@ enum STATUS_CODES {
 
 
 static TCHAR szStatus[][32] = {
-	TEXT("OK"),TEXT("Connecting"),TEXT("Downloading"),TEXT("Cancelled"),TEXT("Connecting"), //TEXT("Opening URL")),
-	TEXT("Reconnect Pause"),TEXT("Terminated"),TEXT("Dialog Error"),TEXT("Open Internet Error"),
-	TEXT("Open URL Error"),TEXT("Transfer Error"),TEXT("File Open Error"),TEXT("File Write Error"),TEXT("File Read Error"),
-	TEXT("Reget Error"),TEXT("Connection Error"),TEXT("OpenRequest Error"),TEXT("SendRequest Error"),
-	TEXT("URL Parts Error"),TEXT("File Not Found (404)"),TEXT("CreateThread Error"),TEXT("Proxy Error (407)"),
-	TEXT("Access Forbidden (403)"),TEXT("Not Allowed (405)"),TEXT("Request Error"),TEXT("Server Error"),
-	TEXT("Unauthorized (401)"),TEXT("FtpCreateDir failed (550)"),TEXT("Error FTP path (550)"),TEXT("Not Modified"), 
-	TEXT("Redirection")
+	_T("OK"),_T("Connecting"),_T("Downloading"),_T("Cancelled"),_T("Connecting"), //_T("Opening URL")),
+	_T("Reconnect Pause"),_T("Terminated"),_T("Dialog Error"),_T("Open Internet Error"),
+	_T("Open URL Error"),_T("Transfer Error"),_T("File Open Error"),_T("File Write Error"),_T("File Read Error"),
+	_T("Reget Error"),_T("Connection Error"),_T("OpenRequest Error"),_T("SendRequest Error"),
+	_T("URL Parts Error"),_T("File Not Found (404)"),_T("CreateThread Error"),_T("Proxy Error (407)"),
+	_T("Access Forbidden (403)"),_T("Not Allowed (405)"),_T("Request Error"),_T("Server Error"),
+	_T("Unauthorized (401)"),_T("FtpCreateDir failed (550)"),_T("Error FTP path (550)"),_T("Not Modified"), 
+	_T("Redirection")
 };
 
 HINSTANCE g_hInstance;
-TCHAR fn[MAX_PATH]=TEXT(""),
+TCHAR fn[MAX_PATH]=_T(""),
 *url = NULL,
 *szAlias = NULL,
 *szProxy = NULL,
 *szHeader = NULL,
 *szBanner = NULL,
 *szQuestion = NULL,
-szCancel[64]=TEXT(""),
-szCaption[128]=TEXT(""),
-szUserAgent[256]=TEXT(""),
-szResume[256] = TEXT("Your internet connection seems to be not permitted or dropped out!\nPlease reconnect and click Retry to resume installation.");
+szCancel[64]=_T(""),
+szCaption[128]=_T(""),
+szUserAgent[256]=_T(""),
+szResume[256] = _T("Your internet connection seems to be not permitted or dropped out!\nPlease reconnect and click Retry to resume installation.");
 CHAR *szPost = NULL,
 post_fname[MAX_PATH] = "";
 DWORD fSize = 0;
-TCHAR *szToStack = NULL;
 
 int status;
 DWORD cnt = 0,
-cntToStack = 0,
 fs = 0,
 timeout = 0,
 receivetimeout = 0;
 DWORD startTime, transfStart, openType;
-bool silent, popup, resume, nocancel, noproxy, nocookies, convToStack, g_ignorecertissues;
+bool silent, popup, resume, nocancel, noproxy, nocookies;
 
 HWND childwnd;
 HWND hDlg;
 bool fput = false, fhead = false;
 
-
-#define Option_IgnoreCertIssues() ( g_ignorecertissues )
-
-static FARPROC GetWininetProcAddress(LPCSTR Name)
-{
-	return GetProcAddress(LoadLibraryA("WININET"), Name);
-}
 
 /*****************************************************
 * FUNCTION NAME: sf(HWND)
@@ -278,28 +239,28 @@ AttachThreadInput(ftid, ctid, FALSE);
 }
 */
 
-static TCHAR szUrl[64] = TEXT("");
-static TCHAR szDownloading[64] = TEXT("Downloading %s");
-static TCHAR szConnecting[64] = TEXT("Connecting ...");
-static TCHAR szSecond[64] = TEXT("second");
-static TCHAR szMinute[32] = TEXT("minute");
-static TCHAR szHour[32] = TEXT("hour");
-static TCHAR szPlural[32] = TEXT("s");
-static TCHAR szProgress[128] = TEXT("%dkB (%d%%) of %dkB @ %d.%01dkB/s");
-static TCHAR szRemaining[64] = TEXT(" (%d %s%s remaining)");
-static TCHAR szBasic[128] = TEXT("");
-static TCHAR szAuth[128] = TEXT("");
+static TCHAR szUrl[64] = _T("");
+static TCHAR szDownloading[64] = _T("Downloading %s");
+static TCHAR szConnecting[64] = _T("Connecting ...");
+static TCHAR szSecond[64] = _T("second");
+static TCHAR szMinute[32] = _T("minute");
+static TCHAR szHour[32] = _T("hour");
+static TCHAR szPlural[32] = _T("s");
+static TCHAR szProgress[128] = _T("%dkB (%d%%) of %dkB @ %d.%01dkB/s");
+static TCHAR szRemaining[64] = _T(" (%d %s%s remaining)");
+static TCHAR szBasic[128] = _T("");
+static TCHAR szAuth[128] = _T("");
 
 // is it possible to make it working with unicode strings?
 
 /* Base64 encode one byte */
 static TCHAR encode(unsigned char u) {
 
-	if(u < 26)  return TEXT('A')+u;
-	if(u < 52)  return TEXT('a')+(u-26);
-	if(u < 62)  return TEXT('0')+(u-52);
-	if(u == 62) return TEXT('+');
-	return TEXT('/');
+	if(u < 26)  return _T('A')+u;
+	if(u < 52)  return _T('a')+(u-26);
+	if(u < 62)  return _T('0')+(u-52);
+	if(u == 62) return _T('+');
+	return _T('/');
 }
 
 TCHAR *encode_base64(int size, TCHAR *src, TCHAR *dst) {
@@ -338,13 +299,13 @@ TCHAR *encode_base64(int size, TCHAR *src, TCHAR *dst) {
 		if(i+1<size) {
 			*p++= encode(b6);
 		} else {
-			*p++= TEXT('=');
+			*p++= _T('=');
 		}
 
 		if(i+2<size) {
 			*p++= encode(b7);
 		} else {
-			*p++= TEXT('=');
+			*p++= _T('=');
 		}
 
 	}
@@ -363,8 +324,8 @@ TCHAR *encode_base64(int size, TCHAR *src, TCHAR *dst) {
 void fileTransfer(HANDLE localFile,
 									HINTERNET hFile)
 {
-	static BYTE data_buf[1024*8];
-	BYTE *dw;
+	byte data_buf[1024*8];
+	byte *dw;
 	DWORD rslt = 0;
 	DWORD bytesDone;
 
@@ -410,15 +371,7 @@ void fileTransfer(HANDLE localFile,
 				status = (fs != NOT_AVAILABLE && cnt < fs) ? ERR_TRANSFER : ST_OK;
 				break;
 			}
-			if(szToStack)
-			{
-				for (DWORD i = 0; cntToStack < g_stringsize && i < rslt; i++, cntToStack++)
-					if (convToStack)
-						*((BYTE*)szToStack + cntToStack) = data_buf[i]; // Bytes
-					else
-						*(szToStack + cntToStack) = data_buf[i]; // ? to TCHARs
-			}
-			else if(!WriteFile(localFile, data_buf, rslt, &bytesDone, NULL) ||
+			if(!WriteFile(localFile, data_buf, rslt, &bytesDone, NULL) ||
 				rslt != bytesDone)
 			{
 				status = ERR_FILEWRITE;
@@ -459,40 +412,40 @@ int mySendRequest(HINTERNET hFile)
 *****************************************************/
 bool queryStatus(HINTERNET hFile)
 {
-	TCHAR buf[256] = TEXT("");
+	TCHAR buf[256] = _T("");
 	DWORD rslt;
 	if(HttpQueryInfo(hFile, HTTP_QUERY_STATUS_CODE,
 		buf, &(rslt = sizeof(buf)), NULL))
 	{
 		buf[3] = 0;
-		if(lstrcmp(buf, TEXT("0")) == 0 || *buf == 0)
+		if(lstrcmp(buf, _T("0")) == 0 || *buf == 0)
 			status = ERR_SENDREQUEST;
-		else if(lstrcmp(buf, TEXT("401")) == 0)
+		else if(lstrcmp(buf, _T("401")) == 0)
 			status = ERR_AUTH;
-		else if(lstrcmp(buf, TEXT("403")) == 0)
+		else if(lstrcmp(buf, _T("403")) == 0)
 			status = ERR_FORBIDDEN;
-		else if(lstrcmp(buf, TEXT("404")) == 0)
+		else if(lstrcmp(buf, _T("404")) == 0)
 			status = ERR_NOTFOUND;
-		else if(lstrcmp(buf, TEXT("407")) == 0)
+		else if(lstrcmp(buf, _T("407")) == 0)
 			status = ERR_PROXY;
-		else if(lstrcmp(buf, TEXT("405")) == 0)
+		else if(lstrcmp(buf, _T("405")) == 0)
 			status = ERR_NOTALLOWED;
-		else if(lstrcmp(buf, TEXT("304")) == 0)
+		else if(lstrcmp(buf, _T("304")) == 0)
 			status = ERR_NOTMODIFIED;
-		else if(*buf == TEXT('3'))
+		else if(*buf == _T('3'))
 		{
 			status = ERR_REDIRECTION;
-			wsprintf(szStatus[status] + lstrlen(szStatus[status]), TEXT(" (%s)"), buf);
+			wsprintf(szStatus[status] + lstrlen(szStatus[status]), _T(" (%s)"), buf);
 		}
-		else if(*buf == TEXT('4'))
+		else if(*buf == _T('4'))
 		{
 			status = ERR_REQUEST;
-			wsprintf(szStatus[status] + lstrlen(szStatus[status]), TEXT(" (%s)"), buf);
+			wsprintf(szStatus[status] + lstrlen(szStatus[status]), _T(" (%s)"), buf);
 		}
-		else if(*buf == TEXT('5'))
+		else if(*buf == _T('5'))
 		{
 			status = ERR_SERVER;
-			wsprintf(szStatus[status] + lstrlen(szStatus[status]), TEXT(" (%s)"), buf);
+			wsprintf(szStatus[status] + lstrlen(szStatus[status]), _T(" (%s)"), buf);
 		}
 		return true;
 	}
@@ -509,7 +462,7 @@ bool queryStatus(HINTERNET hFile)
 HINTERNET openFtpFile(HINTERNET hConn,
 											TCHAR *path)
 {
-	TCHAR buf[256] = TEXT(""), *movp;
+	TCHAR buf[256] = _T(""), *movp;
 	HINTERNET hFile;
 	DWORD rslt, err, gle;
 	bool https_req_ok = false;
@@ -520,28 +473,22 @@ HINTERNET openFtpFile(HINTERNET hConn,
 	{
 		if(!fput) // we know local file size already
 		{
-			if (myFtpCommand)
-			{
-				/* Try to set the REPRESENTATION TYPE to I[mage] (Binary) because some servers
-				don't accept the SIZE command in ASCII mode */
-				myFtpCommand(hConn, false, FTP_TRANSFER_TYPE_ASCII, TEXT("TYPE I"), 0, &hFile);
-			}
-			/* too clever myFtpCommand returnes false on the valid TEXT("550 Not found/Not permitted" server answer,
+			/* too clever myFtpCommand returnes false on the valid _T("550 Not found/Not permitted" server answer,
 			to read answer I had to ignory returned false (!= 999999) :-( 
 			GetLastError also possible, but MSDN description of codes is very limited */
-			wsprintf(buf, TEXT("SIZE %s"), path + 1);
+			wsprintf(buf, _T("SIZE %s"), path + 1);
 			if(myFtpCommand != NULL &&
 				myFtpCommand(hConn, false, FTP_TRANSFER_TYPE_ASCII, buf, 0, &hFile) != 9999 &&
 				memset(buf, 0, sizeof(buf)) != NULL &&
 				InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf))))
 			{
-				if(_tcsstr(buf, TEXT("213 ")))
+				if(_tcsstr(buf, _T("213 ")))
 				{
-					fs = myatou(_tcschr(buf, TEXT(' ')) + 1);
+					fs = _tcstol(_tcschr(buf, _T(' ')) + 1, NULL, 0);
 				}
 				/* stupid ProFTPD returns error on SIZE request. let's continue without size.
 				But IE knows some trick to get size from ProFTPD......
-				else if(mystrstr(buf, TEXT("550 TEXT("))
+				else if(_tcsstr(buf, _T("550 _T("))
 				{
 				status = ERR_SIZE_NOT_PERMITTED;
 				return NULL;
@@ -552,16 +499,17 @@ HINTERNET openFtpFile(HINTERNET hConn,
 			{
 				fs = NOT_AVAILABLE;
 			}
+
 		}
 	}
 	else
 	{
-		wsprintf(buf, TEXT("REST %d"), cnt);
+		wsprintf(buf, _T("REST %d"), cnt);
 		if(myFtpCommand == NULL ||
 			!myFtpCommand(hConn, false, FTP_TRANSFER_TYPE_BINARY, buf, 0, &hFile) ||
 			memset(buf, 0, sizeof(buf)) == NULL ||
 			!InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf))) ||
-			(_tcsstr(buf, TEXT("350")) == NULL && _tcsstr(buf, TEXT("110")) == NULL))
+			(_tcsstr(buf, _T("350")) == NULL && _tcsstr(buf, _T("110")) == NULL))
 		{
 			status = ERR_REGET;
 			return NULL;
@@ -575,19 +523,18 @@ HINTERNET openFtpFile(HINTERNET hConn,
 		InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf)));
 		// wrong path - dir may not exist or upload may be not allowed
 		// we use ftp://host//path (double /) to define path from FS root
-		if(fput && (_tcsstr(buf, TEXT("550")) != NULL || _tcsstr(buf, TEXT("553")) != NULL))
+		if(fput && (_tcsstr(buf, _T("550")) != NULL ||  _tcsstr(buf, _T("553")) != NULL))
 		{
+
 			movp = path + 1;
-			if(*movp == TEXT('/')) movp++; // don't need to create root
-			for (UINT8 escapehatch = 0; ++escapehatch;) // Weak workaround for http://forums.winamp.com/showpost.php?p=3031692&postcount=513 bug
+			if(*movp == _T('/')) movp++; // don't need to creat root
+			while(_tcschr(movp, _T('/')))
 			{
-				TCHAR *pbs = _tcschr(movp, TEXT('/'));
-				if (!pbs) break;
-				*pbs = TEXT('\0');
+				*_tcschr(movp,_T('/')) = 0;
 				FtpCreateDirectory(hConn, path + 1);
 				InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf)));
-				*(movp + lstrlen(movp)) = TEXT('/');
-				movp = _tcschr(movp, TEXT('/')) + 1;
+				*(movp + lstrlen(movp)) = _T('/');
+				movp = _tcschr(movp, _T('/')) + 1;
 			}
 			if(status != ERR_CREATEDIR &&
 				(hFile = FtpOpenFile(hConn, path + 1, GENERIC_WRITE,
@@ -595,16 +542,16 @@ HINTERNET openFtpFile(HINTERNET hConn,
 			{
 				status = ERR_PATH;
 				if(InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf))))
-					lstrcpyn(szStatus[status], _tcsstr(buf, TEXT("550")), sizeof(szStatus[0]) / sizeof(TCHAR));
-			}
+					lstrcpyn(szStatus[status], _tcsstr(buf, _T("550")), sizeof(szStatus[0]) / sizeof(TCHAR));
+			}         
 		}
 		// may be firewall related error, let's give user time to disable it
-		else if(gle == 12003) // ERROR_INTERNET_EXTENDED_ERROR
+		else if(gle == 12003)
 		{
-			if(_tcsstr(buf, TEXT("550")))
+			if(_tcsstr(buf, _T("550")))
 			{
 				status = ERR_NOTFOUND;
-				lstrcpyn(szStatus[status], _tcsstr(buf, TEXT("550")), sizeof(szStatus[0]) / sizeof(TCHAR));
+				lstrcpyn(szStatus[status], _tcsstr(buf, _T("550")), sizeof(szStatus[0]) / sizeof(TCHAR));
 			}
 			else
 			{
@@ -612,24 +559,14 @@ HINTERNET openFtpFile(HINTERNET hConn,
 			}
 		}
 		// timeout (firewall or dropped connection problem)
-		else if(gle == 12002) // ERROR_INTERNET_TIMEOUT
+		else if(gle == 12002)
 		{
 			if(!silent)
 				resume = true;
 			status = ERR_URLOPEN;
 		}
 	}
-	else
-		InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf)));
-	if (hFile && NOT_AVAILABLE == fs)
-	{
-		FARPROC ftpgfs = GetWininetProcAddress("FtpGetFileSize"); // IE5+
-		if (ftpgfs)
-		{
-			DWORD shi, slo = ((DWORD(WINAPI*)(HINTERNET,DWORD*))ftpgfs)(hFile, &shi);
-			if (slo != -1 && !shi) fs = slo;
-		}
-	}
+	else InternetGetLastResponseInfo(&err, buf, &(rslt = sizeof(buf)));
 	return hFile;
 }
 
@@ -641,9 +578,11 @@ HINTERNET openFtpFile(HINTERNET hConn,
 * SPECIAL CONSIDERATIONS:
 *    
 *****************************************************/
-HINTERNET openHttpFile(HINTERNET hConn, INTERNET_SCHEME nScheme, TCHAR *path)
+HINTERNET openHttpFile(HINTERNET hConn,
+											 INTERNET_SCHEME nScheme,
+											 TCHAR *path)
 {
-	TCHAR buf[256] = TEXT("");
+	TCHAR buf[256] = _T("");
 	HINTERNET hFile;
 	DWORD rslt, err;
 	bool first_attempt = true;;
@@ -654,8 +593,8 @@ HINTERNET openHttpFile(HINTERNET hConn, INTERNET_SCHEME nScheme, TCHAR *path)
 	if(fput)// && nScheme != INTERNET_SCHEME_HTTPS)
 	{
 // old proxy's may not support OPTIONS request, so changed to HEAD....
-		if((hFile = HttpOpenRequest(hConn, TEXT("HEAD"), path, NULL, NULL, NULL,
-//		if((hFile = HttpOpenRequest(hConn, TEXT("OPTIONS"), path, NULL, NULL, NULL,
+		if((hFile = HttpOpenRequest(hConn, _T("HEAD"), path, NULL, NULL, NULL,
+//		if((hFile = HttpOpenRequest(hConn, _T("OPTIONS"), path, NULL, NULL, NULL,
 			INTERNET_FLAG_RELOAD | INTERNET_FLAG_KEEP_CONNECTION |
 			(nocookies ? (INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_COOKIES) : 0), 0)) != NULL)
 		{
@@ -678,7 +617,7 @@ resend_auth1:
 				queryStatus(hFile);
 // may be don't need to read all from socket, but this looks safer
 				while(InternetReadFile(hFile, buf, sizeof(buf), &rslt) && rslt > 0) {}
-				if(!silent && (status == ERR_PROXY || status == ERR_AUTH))// || status == ERR_FORBIDDEN))
+				if(!silent && (status == ERR_PROXY || status == ERR_AUTH))// ||  status == ERR_FORBIDDEN))
 				{
 					rslt = InternetErrorDlg(hDlg, hFile,
 						ERROR_INTERNET_INCORRECT_PASSWORD,
@@ -701,7 +640,7 @@ resend_auth1:
 				// no such file is OK for PUT. server first checks authentication
 				if(status == ERR_NOTFOUND || status == ERR_FORBIDDEN || status == ERR_NOTALLOWED)
 				{
-//					MessageBox(childwnd, TEXT("NOT_FOUND"), "", 0);
+//					MessageBox(childwnd, _T("NOT_FOUND"), "", 0);
 					status = ST_URLOPEN;
 				}
 				// parameters might be updated during dialog popup
@@ -723,16 +662,16 @@ resend_auth1:
 // request itself
 	if(status == ST_URLOPEN)
 	{
-		DWORD secflags = nScheme == INTERNET_SCHEME_HTTPS ? MY_HTTPS_FLAGS : 0;
-		if (Option_IgnoreCertIssues()) secflags |= MY_WEAKSECURITY_CERT_FLAGS;
-		DWORD cokflags = nocookies ? (INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_COOKIES) : 0;
-		if((hFile = HttpOpenRequest(hConn, fput ? TEXT("PUT") : (fhead ? TEXT("HEAD") : (szPost ? TEXT("POST") : NULL)),
+		if((hFile = HttpOpenRequest(hConn, fput ? _T("PUT") : (fhead ? _T("HEAD") : (szPost ? _T("POST") : NULL)),
 			path, NULL, NULL, NULL,
 			// INTERNET_FLAG_RELOAD conflicts with reget - hidden re-read from beginning has place
 			// INTERNET_FLAG_RESYNCHRONIZE // note - sync may not work with some http servers
 			// reload on first connect (and any req. except GET), just continue on resume.
 			// HTTP Proxy still is a problem for reget
-			(cnt ? 0 : INTERNET_FLAG_RELOAD) | INTERNET_FLAG_KEEP_CONNECTION | cokflags | secflags, 0)) != NULL)
+			(cnt ? 0 : INTERNET_FLAG_RELOAD)
+			| INTERNET_FLAG_KEEP_CONNECTION |
+			(nocookies ? (INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_COOKIES) : 0) | 
+			(nScheme == INTERNET_SCHEME_HTTPS ? MY_HTTPS_FLAGS : 0), 0)) != NULL)
 		{
 			if(*szAuth)
 			{
@@ -770,7 +709,7 @@ resend_auth2:
 				{
 					InternetQueryOption (hFile, INTERNET_OPTION_SECURITY_FLAGS,
 						(LPVOID)&rslt, &(err = sizeof(rslt)));
-					rslt |= Option_IgnoreCertIssues() ? MY_WEAKSECURITY_CERT_FLAGS : 0;
+					rslt |= MY_CERT_FLAGS;
 					InternetSetOption (hFile, INTERNET_OPTION_SECURITY_FLAGS,
 						&rslt, sizeof(rslt) );
 				}
@@ -808,9 +747,8 @@ resend_auth2:
 						{
 							if(HttpQueryInfo(hFile, HTTP_QUERY_CONTENT_LENGTH, buf,
 								&(rslt = sizeof(buf)), NULL))
-								fs = myatou(buf);
-							else
-								fs = NOT_AVAILABLE;
+								fs = _tcstoul(buf, NULL, 0);
+							else fs = NOT_AVAILABLE;
 						}
 						else
 						{
@@ -819,6 +757,7 @@ resend_auth2:
 						}
 					}
 				}
+				
 			}
 			else
 			{
@@ -841,15 +780,16 @@ resend_auth2:
 DWORD __stdcall inetTransfer(void *hw)
 {
 	HINTERNET hSes, hConn, hFile;
+	HINSTANCE hInstance = NULL;
 	HANDLE localFile = NULL;
 	HWND hDlg = (HWND)hw;
 	DWORD lastCnt, rslt, err;
-	static TCHAR hdr[2048];
-	TCHAR *host = (TCHAR*)LocalAlloc(LPTR, g_stringsize * sizeof(TCHAR)),
-		*path = (TCHAR*)LocalAlloc(LPTR, g_stringsize * sizeof(TCHAR)),
-		*params = (TCHAR*)LocalAlloc(LPTR, g_stringsize * sizeof(TCHAR)),
-		*user = (TCHAR*)LocalAlloc(LPTR, g_stringsize * sizeof(TCHAR)),
-		*passwd = (TCHAR*)LocalAlloc(LPTR, g_stringsize * sizeof(TCHAR));
+	TCHAR hdr[2048];
+	TCHAR *host = (TCHAR*)GlobalAlloc(GPTR, g_stringsize * sizeof(TCHAR)),
+		*path = (TCHAR*)GlobalAlloc(GPTR, g_stringsize * sizeof(TCHAR)),
+		*params = (TCHAR*)GlobalAlloc(GPTR, g_stringsize * sizeof(TCHAR)),
+		*user = (TCHAR*)GlobalAlloc(GPTR, g_stringsize * sizeof(TCHAR)),
+		*passwd = (TCHAR*)GlobalAlloc(GPTR, g_stringsize * sizeof(TCHAR));
 
 	URL_COMPONENTS uc = {sizeof(URL_COMPONENTS), NULL, 0,
 		(INTERNET_SCHEME)0, host, g_stringsize, 0 , user, g_stringsize,
@@ -870,22 +810,24 @@ DWORD __stdcall inetTransfer(void *hw)
 		if(receivetimeout > 0)
 			InternetSetOption(hSes, INTERNET_OPTION_RECEIVE_TIMEOUT, &receivetimeout, sizeof(receivetimeout));
 		// 60 sec WinInet.dll detach delay on socket time_wait fix
-		myFtpCommand = (FTP_CMD) GetWininetProcAddress(
+		//      if(hInstance = GetModuleHandle("wininet.dll"))
+		if(hInstance = LoadLibrary(_T("wininet.dll")))
+			myFtpCommand = (FTP_CMD)GetProcAddress(hInstance,
 #ifdef UNICODE
 			"FtpCommandW"
 #else
 			"FtpCommandA"
 #endif
 			);
-		while(!popstring(url) && lstrcmpi(url, TEXT("/end")) != 0)
+		while(!popstring(url) && lstrcmpi(url, _T("/end")) != 0)
 		{
 			// too many customers requested not to do this
 			//         sf(hDlg);
-			if(popstring(fn) != 0 || lstrcmpi(url, TEXT("/end")) == 0) break;
+			if(popstring(fn) != 0 || lstrcmpi(url, _T("/end")) == 0) break;
 			status = ST_CONNECTING;
 			cnt = fs = *host = *user = *passwd = *path = *params = 0;
 			PostMessage(hDlg, WM_TIMER, 1, 0); // show url & fn, do it sync
-			if(szToStack || (localFile = CreateFile(fn, fput ? GENERIC_READ : GENERIC_WRITE, FILE_SHARE_READ,
+			if((localFile = CreateFile(fn, fput ? GENERIC_READ : GENERIC_WRITE, FILE_SHARE_READ,
 				NULL, fput ? OPEN_EXISTING : CREATE_ALWAYS, 0, NULL)) != INVALID_HANDLE_VALUE)
 			{
 				uc.dwHostNameLength = uc.dwUserNameLength = uc.dwPasswordLength =
@@ -899,13 +841,13 @@ DWORD __stdcall inetTransfer(void *hw)
 					// auth headers for HTTP PUT seems to be lost, preparing encoded login:password
 					if(*user && *passwd)
 					{
-						wsprintf(hdr, TEXT("%s:%s"), user, passwd);
+						wsprintf(hdr, _T("%s:%s"), user, passwd);
 						// does unicode version of encoding works correct?
 						// are user and passwd ascii only?
 						encode_base64(lstrlen(hdr), hdr, szBasic);
 						*hdr = 0;
 					}
-					lstrcat(path, params); // BUGBUG: Could overflow path?
+					lstrcat(path, params);
 					transfStart = GetTickCount();
 					do
 					{
@@ -914,7 +856,7 @@ DWORD __stdcall inetTransfer(void *hw)
 						if((fput && uc.nScheme != INTERNET_SCHEME_FTP) || szPost)
 						{
 							cnt = 0;
-							SetFilePointer(localFile, 0, NULL, FILE_BEGIN);
+							SetFilePointer(localFile, 0, NULL, SEEK_SET);
 						}
 						status = ST_CONNECTING;
 						lastCnt = cnt;
@@ -937,25 +879,15 @@ DWORD __stdcall inetTransfer(void *hw)
 								if(fhead)
 								{// repeating calls clear headers..
 									if(HttpQueryInfo(hFile, HTTP_QUERY_RAW_HEADERS_CRLF, hdr, &(rslt=2048), NULL))
-									{
-										if(szToStack)
-										{
-											for (DWORD i = 0; cntToStack < g_stringsize && i < rslt; i++, cntToStack++)
-												*(szToStack + cntToStack) = hdr[i]; // ASCII to TCHAR
-										}
-										else
-										{
-											WriteFile(localFile, hdr, rslt, &lastCnt, NULL);
-										}
-									}
+										WriteFile(localFile, hdr, rslt, &lastCnt, NULL);
 									status = ST_OK;
 								}
 								else
 								{
 									HWND hBar = GetDlgItem(hDlg, IDC_PROGRESS1);
 									SendDlgItemMessage(hDlg, IDC_PROGRESS1, PBM_SETPOS, 0, 0);
-									SetWindowText(GetDlgItem(hDlg, IDC_STATIC5), fs == NOT_AVAILABLE ? TEXT("Not Available") : TEXT(""));
-									SetWindowText(GetDlgItem(hDlg, IDC_STATIC4), fs == NOT_AVAILABLE ? TEXT("Unknown") : TEXT(""));
+									SetWindowText(GetDlgItem(hDlg, IDC_STATIC5), fs == NOT_AVAILABLE ? _T("Not Available") : _T(""));
+									SetWindowText(GetDlgItem(hDlg, IDC_STATIC4), fs == NOT_AVAILABLE ? _T("Unknown") : _T(""));
 									SetWindowLong(hBar, GWL_STYLE, fs == NOT_AVAILABLE ?
 										(GetWindowLong(hBar, GWL_STYLE) | PBS_MARQUEE) : (GetWindowLong(hBar, GWL_STYLE) & ~PBS_MARQUEE)); 
 									SendDlgItemMessage(hDlg, IDC_PROGRESS1, PBM_SETMARQUEE, (WPARAM)(fs == NOT_AVAILABLE ? 1 : 0), (LPARAM)50 );
@@ -975,9 +907,9 @@ DWORD __stdcall inetTransfer(void *hw)
 							status = ERR_CONNECT;
 							if(uc.nScheme == INTERNET_SCHEME_FTP &&
 								InternetGetLastResponseInfo(&err, hdr, &(rslt = sizeof(hdr))) &&
-								_tcsstr(hdr, TEXT("530")))
+								_tcsstr(hdr, _T("530")))
 							{
-								lstrcpyn(szStatus[status], _tcsstr(hdr, TEXT("530")), sizeof(szStatus[0]) / sizeof(TCHAR));
+								lstrcpyn(szStatus[status], _tcsstr(hdr, _T("530")), sizeof(szStatus[0]) / sizeof(TCHAR));
 							}
 							else
 							{
@@ -1004,7 +936,7 @@ DWORD __stdcall inetTransfer(void *hw)
 				}
 				else status = ERR_CRACKURL;
 				CloseHandle(localFile);
-				if(!fput && status != ST_OK && !szToStack)
+				if(!fput && status != ST_OK)
 				{
 					rslt = DeleteFile(fn);
 					break;
@@ -1013,15 +945,15 @@ DWORD __stdcall inetTransfer(void *hw)
 			else status = ERR_FILEOPEN;
 		}
 		InternetCloseHandle(hSes);
-		if (lstrcmpi(url, TEXT("/end"))==0)
+		if (lstrcmpi(url, _T("/end"))==0)
 			pushstring(url);
 	}
 	else status = ERR_INETOPEN;
-	LocalFree(host);
-	LocalFree(path);
-	LocalFree(user);
-	LocalFree(passwd);
-	LocalFree(params);
+	GlobalFree(host);
+	GlobalFree(path);
+	GlobalFree(user);
+	GlobalFree(passwd);
+	GlobalFree(params);
 	if(IsWindow(hDlg))
 		PostMessage(hDlg, WM_COMMAND, MAKELONG(IDOK, INTERNAL_OK), 0);
 	return status;
@@ -1034,17 +966,18 @@ DWORD __stdcall inetTransfer(void *hw)
 * SPECIAL CONSIDERATIONS:
 *    
 *****************************************************/
-void fsFormat(DWORD bfs, TCHAR *b)
+void fsFormat(DWORD bfs,
+							TCHAR *b)
 {
 	if(bfs == NOT_AVAILABLE)
-		lstrcpy(b, TEXT("???"));
+		lstrcpy(b, _T("???"));
 	else if(bfs == 0)
-		lstrcpy(b, TEXT("0"));
+		lstrcpy(b, _T("0"));
 	else if(bfs < 10 * 1024)
-		wsprintf(b, TEXT("%u bytes"), bfs);
+		wsprintf(b, _T("%u bytes"), bfs);
 	else if(bfs < 10 * 1024 * 1024)
-		wsprintf(b, TEXT("%u kB"), bfs / 1024);
-	else wsprintf(b, TEXT("%u MB"), (bfs / 1024 / 1024));
+		wsprintf(b, _T("%u kB"), bfs / 1024);
+	else wsprintf(b, _T("%u MB"), (bfs / 1024 / 1024));
 }
 
 
@@ -1058,7 +991,7 @@ void fsFormat(DWORD bfs, TCHAR *b)
 
 void progress_callback(void)
 {
-	static TCHAR buf[1024] = TEXT(""), b[1024] = TEXT("");
+	TCHAR buf[1024] = _T(""), b[1024] = _T("");
 	int time_sofar = max(1, (GetTickCount() - transfStart) / 1000);
 	int bps = cnt / time_sofar;
 	int remain = (cnt > 0 && fs != NOT_AVAILABLE) ? (MulDiv(time_sofar, fs, cnt) - time_sofar) : 0;
@@ -1085,15 +1018,15 @@ void progress_callback(void)
 		szRemaining,
 		remain,
 		rtext,
-		remain==1?TEXT(""):szPlural
+		remain==1?_T(""):szPlural
 		);
 	SetDlgItemText(hDlg, IDC_STATIC1, (cnt == 0 || status == ST_CONNECTING) ? szConnecting : buf);
 	if(fs > 0 && fs != NOT_AVAILABLE)
 		SendMessage(GetDlgItem(hDlg, IDC_PROGRESS1), PBM_SETPOS, MulDiv(cnt, PB_RANGE, fs), 0);
 	if (*szCaption == 0)
-		wsprintf(buf, szDownloading, _tcsrchr(fn, TEXT('\\')) ? _tcsrchr(fn, TEXT('\\')) + 1 : fn);
-	else
-		wsprintf(buf, TEXT("%s"),szCaption);
+		wsprintf(buf, szDownloading,
+			_tcschr(fn, _T('\\')) ? _tcsrchr(fn, _T('\\')) + 1 : fn);
+	else wsprintf(buf, _T("%s"),szCaption);
 	HWND hwndS = GetDlgItem(childwnd, 1006);
 	if(!silent && hwndS != NULL && IsWindow(hwndS))
 	{
@@ -1116,30 +1049,30 @@ void onTimer(HWND hDlg)
 	DWORD ct = (GetTickCount() - transfStart) / 1000,
 		tt = (GetTickCount() - startTime) / 1000;
 	// dialog window caption
-	wsprintf(b, TEXT("%s - %s"), *szCaption ? szCaption : PLUGIN_NAME, szStatus[status]);
+	wsprintf(b,  _T("%s - %s"), *szCaption ? szCaption : PLUGIN_NAME, szStatus[status]);
 	if(fs > 0 && fs != NOT_AVAILABLE && status == ST_DOWNLOAD)
 	{
-		wsprintf(b + lstrlen(b), TEXT(" %d%%"), MulDiv(100, cnt, fs));
+		wsprintf(b + lstrlen(b), _T(" %d%%"), MulDiv(100, cnt, fs));
 	}
 	if(szBanner == NULL) SetWindowText(hDlg, b);
 	// current file and url
 	SetDlgItemText(hDlg, IDC_STATIC1, (szAlias && *szAlias) ? szAlias : url);
-	SetDlgItemText(hDlg, IDC_STATIC2, /*_tcsrchr(fn, '\\') ? _tcsrchr(fn, '\\') + 1 : */fn);
+	SetDlgItemText(hDlg, IDC_STATIC2, /*_tcschr(fn, '\\') ? _tcsrchr(fn, '\\') + 1 : */fn);
 	// bytes done and rate
 	if(cnt > 0)
 	{
 		fsFormat(cnt, b);
 		if(ct > 1 && status == ST_DOWNLOAD)
 		{
-			lstrcat(b, TEXT("   ( "));
+			lstrcat(b, _T("   ( "));
 			fsFormat(cnt / ct, b + lstrlen(b));
-			lstrcat(b, TEXT("/sec )"));
+			lstrcat(b, _T("/sec )"));
 		}
 	}
 	else *b = 0;
 	SetDlgItemText(hDlg, IDC_STATIC3, b);
 	// total download time
-	wsprintf(b, TEXT("%d:%02d:%02d"), tt / 3600, (tt / 60) % 60, tt % 60);
+	wsprintf(b, _T("%d:%02d:%02d"), tt / 3600, (tt / 60) % 60, tt % 60);
 	SetDlgItemText(hDlg, IDC_STATIC6, b);
 	// file size, time remaining, progress bar
 	if(fs > 0 && fs != NOT_AVAILABLE)
@@ -1150,7 +1083,7 @@ void onTimer(HWND hDlg)
 		if(cnt > 5000)
 		{
 			ct = MulDiv(fs - cnt, ct, cnt);
-			wsprintf(b, TEXT("%d:%02d:%02d"), ct / 3600, (ct / 60) % 60, ct % 60);
+			wsprintf(b, _T("%d:%02d:%02d"), ct / 3600, (ct / 60) % 60, ct % 60);
 		}
 		else *b = 0;
 		SetWindowText(GetDlgItem(hDlg, IDC_STATIC4), b);
@@ -1274,61 +1207,57 @@ void onInitDlg(HWND hDlg)
 * SPECIAL CONSIDERATIONS:
 *    todo: better dialog design
 *****************************************************/
-INT_PTR CALLBACK dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam )
-{
-	switch(message)
-	{
-	case WM_INITDIALOG:
-		onInitDlg(hDlg);
-		centerDlg(hDlg);
-		return false;
-	case WM_PAINT:
-		// child dialog redraw problem. return false is important
-		{
-			HWND hS1 = GetDlgItem(hDlg, IDC_STATIC1), hC = GetDlgItem(hDlg, IDCANCEL), hP1 = GetDlgItem(hDlg, IDC_PROGRESS1);
-			RedrawWindow(hS1, NULL, NULL, RDW_INVALIDATE);
-			RedrawWindow(hC, NULL, NULL, RDW_INVALIDATE);
-			RedrawWindow(hP1, NULL, NULL, RDW_INVALIDATE);
-			UpdateWindow(hS1);
-			UpdateWindow(hC);
-			UpdateWindow(hP1);
-		}
-		return false;
-	case WM_TIMER:
-		if(!silent && IsWindow(hDlg))
-		{
-			//  long connection period and paused state updates
-			if(status != ST_DOWNLOAD && GetTickCount() - transfStart > PROGRESS_MS)
-				transfStart += PROGRESS_MS;
-			if(popup) onTimer(hDlg); else progress_callback();
-			RedrawWindow(GetDlgItem(hDlg, IDC_STATIC1), NULL, NULL, RDW_INVALIDATE);
-			RedrawWindow(GetDlgItem(hDlg, IDCANCEL), NULL, NULL, RDW_INVALIDATE);
-			RedrawWindow(GetDlgItem(hDlg, IDC_PROGRESS1), NULL, NULL, RDW_INVALIDATE);
-		}
-		break;
-	case WM_COMMAND:
-		switch(LOWORD(wParam))
-		{
-		case IDCANCEL:
-			if(nocancel) break;
-			if(szQuestion &&
-				MessageBox(hDlg, szQuestion, *szCaption ? szCaption : PLUGIN_NAME, MB_ICONWARNING|MB_YESNO) == IDNO)
-				break;
-			status = ST_CANCELLED;
-			// FallThrough
-		case IDOK:
-			if(status != ST_CANCELLED && HIWORD(wParam) != INTERNAL_OK) break;
-			// otherwise in the silent mode next banner windows may go to background
-			//         if(silent) sf(hDlg);
-			KillTimer(hDlg, 1);
-			DestroyWindow(hDlg);
-			break;
-		}
-		return false;
-	default:
-		return false;
-	}
-	return true;
+BOOL WINAPI dlgProc(HWND hDlg,
+										UINT message,
+										WPARAM wParam,
+										LPARAM lParam )  {
+											switch(message)    {
+	 case WM_INITDIALOG:
+		 onInitDlg(hDlg);
+		 centerDlg(hDlg);
+		 break;
+	 case WM_PAINT:
+		 // child dialog redraw problem. return false is important
+		 RedrawWindow(GetDlgItem(hDlg, IDC_STATIC1), NULL, NULL, RDW_INVALIDATE);
+		 RedrawWindow(GetDlgItem(hDlg, IDCANCEL), NULL, NULL, RDW_INVALIDATE);
+		 RedrawWindow(GetDlgItem(hDlg, IDC_PROGRESS1), NULL, NULL, RDW_INVALIDATE);
+		 UpdateWindow(GetDlgItem(hDlg, IDC_STATIC1));
+		 UpdateWindow(GetDlgItem(hDlg, IDCANCEL));
+		 UpdateWindow(GetDlgItem(hDlg, IDC_PROGRESS1));
+		 return false;
+	 case WM_TIMER:
+		 if(!silent && IsWindow(hDlg))
+		 {
+			 //  long connection period and paused state updates
+			 if(status != ST_DOWNLOAD && GetTickCount() - transfStart > PROGRESS_MS)
+				 transfStart += PROGRESS_MS;
+			 if(popup) onTimer(hDlg);
+			 else progress_callback();
+			 RedrawWindow(GetDlgItem(hDlg, IDC_STATIC1), NULL, NULL, RDW_INVALIDATE);
+			 RedrawWindow(GetDlgItem(hDlg, IDCANCEL), NULL, NULL, RDW_INVALIDATE);
+			 RedrawWindow(GetDlgItem(hDlg, IDC_PROGRESS1), NULL, NULL, RDW_INVALIDATE);
+		 }
+		 break;
+	 case WM_COMMAND:
+		 switch(LOWORD(wParam))
+		 {
+		 case IDCANCEL:
+			 if(nocancel) break;
+			 if(szQuestion &&
+				 MessageBox(hDlg, szQuestion, *szCaption ? szCaption : PLUGIN_NAME, MB_ICONWARNING|MB_YESNO) == IDNO)
+				 break;
+			 status = ST_CANCELLED;
+		 case IDOK:
+			 if(status != ST_CANCELLED && HIWORD(wParam) != INTERNAL_OK) break;
+			 // otherwise in the silent mode next banner windows may go to background
+			 //         if(silent) sf(hDlg);
+			 KillTimer(hDlg, 1);
+			 DestroyWindow(hDlg);
+			 break;
+		 }
+	 default: return false;
+											}
+											return true;
 }
 
 /*****************************************************
@@ -1339,7 +1268,7 @@ INT_PTR CALLBACK dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam )
 *    
 *****************************************************/
 extern "C"
-void __declspec(dllexport) __cdecl get(HWND hwndParent,
+void __declspec(dllexport) get(HWND hwndParent,
 															 int string_size,
 															 TCHAR *variables,
 															 stack_t **stacktop,
@@ -1349,21 +1278,20 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 	HANDLE hThread;
 	DWORD dwThreadId;
 	MSG msg;
-	TCHAR szUsername[64]=TEXT(""), // proxy params
-		szPassword[64]=TEXT("");
+	TCHAR szUsername[64]=_T(""), // proxy params
+		szPassword[64]=_T("");
 
 
 	EXDLL_INIT();
 
 // for repeating /nounload plug-un calls - global vars clean up
 	silent = popup = resume = nocancel = noproxy = nocookies = false;
-	g_ignorecertissues = false;
 	myFtpCommand = NULL;
 	openType = INTERNET_OPEN_TYPE_PRECONFIG;
 	status = ST_CONNECTING;
 	*szCaption = *szCancel = *szUserAgent = *szBasic = *szAuth = 0;
 
-	url = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+	url = (TCHAR*)GlobalAlloc(GPTR, string_size * sizeof(TCHAR));
 	if(szPost)
 	{
 		popstring(url);
@@ -1372,43 +1300,42 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 #else
 		lstrcpy(szPost, url);
 #endif
-		fSize = (DWORD)lstrlenA(szPost);
+		fSize = strlen(szPost);
 	}
 	// global silent option
 	if(extra->exec_flags->silent != 0)
 		silent = true;
 	// we must take this from stack, or push url back
-	while(!popstring(url) && *url == TEXT('/'))
+	while(!popstring(url) && *url == _T('/'))
 	{
-		if(lstrcmpi(url, TEXT("/silent")) == 0)
+		if(lstrcmpi(url, _T("/silent")) == 0)
 			silent = true;
-		else if(lstrcmpi(url, TEXT("/weaksecurity")) == 0)
-			g_ignorecertissues = true;
-		else if(lstrcmpi(url, TEXT("/caption")) == 0)
+		else if(lstrcmpi(url, _T("/caption")) == 0)
 			popstring(szCaption);
-		else if(lstrcmpi(url, TEXT("/username")) == 0)
+		else if(lstrcmpi(url, _T("/username")) == 0)
 			popstring(szUsername);
-		else if(lstrcmpi(url, TEXT("/password")) == 0)
+		else if(lstrcmpi(url, _T("/password")) == 0)
 			popstring(szPassword);
-		else if(lstrcmpi(url, TEXT("/nocancel")) == 0)
+		else if(lstrcmpi(url, _T("/nocancel")) == 0)
 			nocancel = true;
-		else if(lstrcmpi(url, TEXT("/nocookies")) == 0)
+		else if(lstrcmpi(url, _T("/nocookies")) == 0)
 			nocookies = true;
-		else if(lstrcmpi(url, TEXT("/noproxy")) == 0)
+		else if(lstrcmpi(url, _T("/noproxy")) == 0)
 			openType = INTERNET_OPEN_TYPE_DIRECT;
-		else if(lstrcmpi(url, TEXT("/popup")) == 0)
+		else if(lstrcmpi(url, _T("/popup")) == 0)
 		{
 			popup = true;
-			szAlias = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+			szAlias = (TCHAR*)GlobalAlloc(GPTR, string_size);
 			popstring(szAlias);
 		}
-		else if(lstrcmpi(url, TEXT("/resume")) == 0)
+		else if(lstrcmpi(url, _T("/resume")) == 0)
 		{
 			popstring(url);
-			if(url[0]) lstrcpy(szResume, url);
+			if(lstrlen(url) > 0)
+				lstrcpy(szResume, url);
 			resume = true;
 		}
-		else if(lstrcmpi(url, TEXT("/translate")) == 0)
+		else if(lstrcmpi(url, _T("/translate")) == 0)
 		{
 			if(popup)
 			{
@@ -1434,54 +1361,49 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 				popstring(szRemaining);
 			}
 		}
-		else if(lstrcmpi(url, TEXT("/banner")) == 0)
+		else if(lstrcmpi(url, _T("/banner")) == 0)
 		{
 			popup = true;
-			szBanner = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+			szBanner = (TCHAR*)GlobalAlloc(GPTR, string_size);
 			popstring(szBanner);
 		}
-		else if(lstrcmpi(url, TEXT("/canceltext")) == 0)
+		else if(lstrcmpi(url, _T("/canceltext")) == 0)
 		{
 			popstring(szCancel);
 		}
-		else if(lstrcmpi(url, TEXT("/question")) == 0)
+		else if(lstrcmpi(url, _T("/question")) == 0)
 		{
-			szQuestion = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+			szQuestion = (TCHAR*)GlobalAlloc(GPTR, string_size);
 			popstring(szQuestion);
 			if(*szQuestion == 0) lstrcpy(szQuestion, DEF_QUESTION);
 		}
-		else if(lstrcmpi(url, TEXT("/useragent")) == 0)
+		else if(lstrcmpi(url, _T("/useragent")) == 0)
 		{
 			popstring(szUserAgent);
 		}
-		else if(lstrcmpi(url, TEXT("/proxy")) == 0)
+		else if(lstrcmpi(url, _T("/proxy")) == 0)
 		{
-			szProxy = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+			szProxy = (TCHAR*)GlobalAlloc(GPTR, string_size * sizeof(TCHAR));
 			popstring(szProxy);
 			openType = INTERNET_OPEN_TYPE_PROXY;
 		}
-		else if(lstrcmpi(url, TEXT("/connecttimeout")) == 0)
+		else if(lstrcmpi(url, _T("/connecttimeout")) == 0)
 		{
 			popstring(url);
-			timeout = myatou(url) * 1000;
+			timeout = _tcstol(url, NULL, 10) * 1000;
 		}
-		else if(lstrcmpi(url, TEXT("/receivetimeout")) == 0)
+		else if(lstrcmpi(url, _T("/receivetimeout")) == 0)
+			
 		{
 			popstring(url);
-			receivetimeout = myatou(url) * 1000;
+			receivetimeout = _tcstol(url, NULL, 10) * 1000;
 		}
-		else if(lstrcmpi(url, TEXT("/header")) == 0)
+		else if(lstrcmpi(url, _T("/header")) == 0)
 		{
-			szHeader = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
+			szHeader = (TCHAR*)GlobalAlloc(GPTR, string_size);
 			popstring(szHeader);
 		}
-		else if(!fput && ((convToStack = lstrcmpi(url, TEXT("/tostackconv")) == 0) || lstrcmpi(url, TEXT("/tostack")) == 0))
-		{
-			szToStack = (TCHAR*)LocalAlloc(LPTR, string_size * sizeof(TCHAR));
-			cntToStack = 0;
-			lstrcpy(fn, TEXT("file"));
-		}
-		else if(lstrcmpi(url, TEXT("/file")) == 0)
+		else if(lstrcmpi(url, _T("/file")) == 0)
 		{
 			HANDLE hFile = CreateFileA(szPost, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 			DWORD rslt;
@@ -1498,8 +1420,8 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 			}
 			wsprintfA(post_fname, "Filename: %s",
 				strchr(szPost, '\\') ? strrchr(szPost, '\\') + 1 : szPost);
-			LocalFree(szPost);
-			szPost = (char*)LocalAlloc(LPTR, fSize);
+			GlobalFree(szPost);
+			szPost = (char*)GlobalAlloc(GPTR, fSize);
 			if(ReadFile(hFile, szPost, fSize, &rslt, NULL) == 0 || rslt != fSize)
 			{
 				CloseHandle(hFile);
@@ -1514,12 +1436,12 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 	if(*szUserAgent == 0) lstrcpy(szUserAgent, INETC_USERAGENT);
 	if(*szPassword && *szUsername)
 	{
-		wsprintf(url, TEXT("%s:%s"), szUsername, szPassword);
+		wsprintf(url, _T("%s:%s"), szUsername, szPassword);
 		encode_base64(lstrlen(url), url, szAuth);
 	}
 	// may be silent for plug-in, but not so for installer itself - let's try to define 'progress text'
 	if(hwndParent != NULL &&
-		(childwnd = FindWindowEx(hwndParent, NULL, TEXT("#32770"), NULL)) != NULL &&
+		(childwnd = FindWindowEx(hwndParent, NULL, _T("#32770"), NULL)) != NULL &&
 		!silent)
 		SetDlgItemText(childwnd, 1006, *szCaption ? szCaption : PLUGIN_NAME);
 	else InitCommonControls(); // or NSIS do this before .onInit?
@@ -1582,7 +1504,7 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 			CloseHandle(hThread);
 			if(!silent && childwnd)
 			{
-				SetDlgItemText(childwnd, 1006, TEXT(""));
+				SetDlgItemText(childwnd, 1006, _T(""));
 				if(!popup)
 				{
 					if(hButton)
@@ -1590,7 +1512,7 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 					if(hList && fVisibleList)
 						ShowWindow(hList, SW_SHOW);
 				}
-				// RedrawWindow(childwnd, NULL, NULL, RDW_INVALIDATE|RDW_ERASE);
+				//            RedrawWindow(childwnd, NULL, NULL, RDW_INVALIDATE|RDW_ERASE);
 			}
 		}
 		else
@@ -1601,71 +1523,26 @@ void __declspec(dllexport) __cdecl get(HWND hwndParent,
 	}
 	else {
 		status = ERR_DIALOG;
-		wsprintf(szStatus[status] + lstrlen(szStatus[status]), TEXT(" (Err=%d)"), GetLastError());
+		wsprintf(szStatus[status] + lstrlen(szStatus[status]), _T(" (Err=%d)"), GetLastError());
 	}
 cleanup:
 	// we need to clean up stack from remaining url/file pairs.
 	// this multiple files download head pain and may be not safe
-	while(!popstring(url) && lstrcmpi(url, TEXT("/end")) != 0)
+	while(!popstring(url) && lstrcmpi(url, _T("/end")) != 0)
 	{
-		/* nothing MessageBox(NULL, url, TEXT(""), 0);*/
+		/* nothing MessageBox(NULL, url, _T(""), 0);*/
 	}
-	LocalFree(url);
-	if(szAlias) LocalFree(szAlias);
-	if(szBanner) LocalFree(szAlias);
-	if(szQuestion) LocalFree(szQuestion);
-	if(szProxy) LocalFree(szProxy);
-	if(szPost) LocalFree(szPost);
-	if(szHeader) LocalFree(szHeader);
+	GlobalFree(url);
+	if(szAlias) GlobalFree(szAlias);
+	if(szBanner) GlobalFree(szAlias);
+	if(szQuestion) GlobalFree(szQuestion);
+	if(szProxy) GlobalFree(szProxy);
+	if(szPost) GlobalFree(szPost);
+	if(szHeader) GlobalFree(szHeader);
 
 	url = szProxy = szHeader = szAlias = szQuestion = NULL;
 	szPost = NULL;
 	fput = fhead = false;
-
-	if(szToStack && status == ST_OK)
-	{
-		if(cntToStack > 0 && convToStack)
-		{
-#ifdef UNICODE
-			int cp = CP_ACP;
-			if (0xef == ((BYTE*)szToStack)[0] && 0xbb == ((BYTE*)szToStack)[1] && 0xbf == ((BYTE*)szToStack)[2]) cp = 65001; // CP_UTF8
-			if (0xff == ((BYTE*)szToStack)[0] && 0xfe == ((BYTE*)szToStack)[1])
-			{
-				cp = 1200; // UTF-16LE
-				pushstring((LPWSTR)szToStack);
-			}
-			int required = (cp == 1200) ? 0 : MultiByteToWideChar(cp, 0, (CHAR*)szToStack, string_size * sizeof(TCHAR), NULL, 0);
-			if(required > 0)
-			{
-				WCHAR* pszToStackNew = (WCHAR*)LocalAlloc(LPTR, sizeof(WCHAR) * (required + 1));
-				if(pszToStackNew)
-				{
-					if(MultiByteToWideChar(cp, 0, (CHAR*)szToStack, string_size * sizeof(TCHAR), pszToStackNew, required) > 0)
-						pushstring(pszToStackNew);
-					LocalFree(pszToStackNew);
-				}
-			}
-#else
-			int required = WideCharToMultiByte(CP_ACP, 0, (WCHAR*)szToStack, -1, NULL, 0, NULL, NULL);
-			if(required > 0)
-			{
-				CHAR* pszToStackNew = (CHAR*)LocalAlloc(LPTR, required + 1);
-				if(pszToStackNew)
-				{
-					if(WideCharToMultiByte(CP_ACP, 0, (WCHAR*)szToStack, -1, pszToStackNew, required, NULL, NULL) > 0)
-						pushstring(pszToStackNew);
-					LocalFree(pszToStackNew);
-				}
-			}
-#endif
-		}
-		else
-		{
-			pushstring(szToStack);
-		}
-		LocalFree(szToStack);
-		szToStack = NULL;
-	}
 
 	pushstring(szStatus[status]);
 }
@@ -1678,7 +1555,7 @@ cleanup:
 *    re-put not works with http, but ftp REST - may be.
 *****************************************************/
 extern "C"
-void __declspec(dllexport) __cdecl put(HWND hwndParent,
+void __declspec(dllexport) put(HWND hwndParent,
 															 int string_size,
 															 TCHAR *variables,
 															 stack_t **stacktop,
@@ -1686,8 +1563,8 @@ void __declspec(dllexport) __cdecl put(HWND hwndParent,
 															 )
 {
 	fput = true;
-	lstrcpy(szDownloading, TEXT("Uploading %s"));
-	lstrcpy(szStatus[2], TEXT("Uploading"));
+	lstrcpy(szDownloading, _T("Uploading %s"));
+	lstrcpy(szStatus[2], _T("Uploading"));
 	get(hwndParent, string_size, variables, stacktop, extra);
 }
 
@@ -1699,14 +1576,14 @@ void __declspec(dllexport) __cdecl put(HWND hwndParent,
 *
 *****************************************************/
 extern "C"
-void __declspec(dllexport) __cdecl post(HWND hwndParent,
+void __declspec(dllexport) post(HWND hwndParent,
 																int string_size,
 																TCHAR *variables,
 																stack_t **stacktop,
 																extra_parameters *extra
 																)
 {
-	szPost = (CHAR*)LocalAlloc(LPTR, string_size);
+	szPost = (CHAR*)GlobalAlloc(GPTR, string_size);
 	get(hwndParent, string_size, variables, stacktop, extra);
 }
 
@@ -1718,7 +1595,7 @@ void __declspec(dllexport) __cdecl post(HWND hwndParent,
 *    re-put not works with http, but ftp REST - may be.
 *****************************************************/
 extern "C"
-void __declspec(dllexport) __cdecl head(HWND hwndParent,
+void __declspec(dllexport) head(HWND hwndParent,
 																int string_size,
 																TCHAR *variables,
 																stack_t **stacktop,
@@ -1736,11 +1613,10 @@ void __declspec(dllexport) __cdecl head(HWND hwndParent,
 * SPECIAL CONSIDERATIONS:
 *    
 *****************************************************/
-#ifdef _VC_NODEFAULTLIB
-#define DllMain _DllMainCRTStartup
-#endif
-EXTERN_C BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+BOOL WINAPI DllMain(HANDLE hInst,
+										ULONG ul_reason_for_call,
+										LPVOID lpReserved)
 {
-	g_hInstance = hinstDLL;
+	g_hInstance=(HINSTANCE)hInst;
 	return TRUE;
 }

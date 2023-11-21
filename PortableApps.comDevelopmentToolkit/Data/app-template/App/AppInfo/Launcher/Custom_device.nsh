@@ -252,6 +252,23 @@ LangString DevMessage2 2052 "执行命令的文件路径，在当前程序范围
 	Pop $2
 	Pop $1
 !macroend
+!macro addreg _SECTION _KEY_PRIX
+	StrCpy $R3 1
+	${Do}
+		ClearErrors
+		${ReadLauncherConfig} $0 ${_SECTION} ${_KEY_PRIX}$R3
+		${IfThen} ${Errors} ${|} ${ExitDo} ${|}
+		${If} $0 != ""
+		${AndIf} $0 != ${PLACEHOLDER}
+			StrCpy $1 "$0" -4
+			${If} $1 == ".reg"
+			${AndIf} ${FileExists} "$0"
+				${registry::RestoreKey} "$0" $1
+			${EndIf}
+		${EndIf}
+		IntOp $R3 $R3 + 1
+	${Loop}
+!macroend
 !endif
 
 Function InstallDevice

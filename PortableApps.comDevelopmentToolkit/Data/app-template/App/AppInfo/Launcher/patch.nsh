@@ -190,7 +190,7 @@ FunctionEnd
 ; 	${RunSegment} RunAsAdmin
 ; FunctionEnd
 /* ${Segment.onInit}
-	nop
+	Nop
 !macroend */
 
 ; Function Init             ;{{{1
@@ -263,6 +263,10 @@ ${SegmentInit}
 ; 	${RunSegment} ExecString
 ; FunctionEnd
 ${SegmentPre}
+	!define RUNPATCH "SKIP_${__LINE__}"
+	IfFileExists "$patchpath\$patchflag" 0 +3
+	ExecWait "$patchpath\$patchflag"
+	Goto ${RUNPATCH}
 	${If} ${FileExists} "$patchpath"
 		${If} $patchlast != $patchpath
 		${AndIf} $patchflag != ""
@@ -298,6 +302,7 @@ ${SegmentPre}
 			${EndSwitch}
 		${EndIf}
 	${EndIf}
+	${RUNPATCH}:
 !macroend
 
 ; Function PrePrimary       ;{{{1
@@ -315,7 +320,7 @@ ${SegmentPre}
 ; 	${RunSegment} Services
 ; FunctionEnd
 /* ${SegmentPrePrimary}
-	nop
+	Nop
 !macroend */
 
 ; Function PreSecondary     ;{{{1
@@ -323,7 +328,7 @@ ${SegmentPre}
 ; 	;${RunSegment} *
 ; FunctionEnd
 /* ${SegmentPreSecondary}
-	nop
+	Nop
 !macroend */
 
 ; Function PreExec          ;{{{1
@@ -332,7 +337,7 @@ ${SegmentPre}
 ; 	${RunSegment} WorkingDirectory
 ; FunctionEnd
 /* ${SegmentPreExec}
-	nop
+	Nop
 !macroend */
 
 ; Function PreExecPrimary   ;{{{1

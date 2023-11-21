@@ -1,6 +1,6 @@
-Command line defined: "PACKAGE=D:\PortableApps_p\PyCharmPortable"
-Command line defined: "NamePortable=PyCharm Portable"
-Command line defined: "AppID=PyCharmPortable"
+Command line defined: "PACKAGE=D:\PortableApps_p\EdrawMindPortable"
+Command line defined: "NamePortable=EdrawMind Portable"
+Command line defined: "AppID=EdrawMindPortable"
 Command line defined: "Version=3.0.8.0"
 Processing script file: "D:\PortableApps_p\PortableApps.comLauncher\Other\Source\PortableApps.comLauncher.nsi" (ACP)
 (If you get a compile error with !searchparse, please upgrade to Unicode NSIS 2.46 or later and try again.) (RequireLatestNSIS.nsh:11)
@@ -188,7 +188,7 @@ warning: !warning: LangString "LauncherNoJavaCancelled" for language Turkish is 
 warning: !warning: LangString "LauncherProgramFiles" for language Turkish is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
 Initialising variables and macros... (macro:!echo:3)
 Loading segments... (macro:!echo:3)
-warning 7000: !include: could not find: "D:\PortableApps_p\PyCharmPortable\App\AppInfo\Launcher\Debug.nsh" (Debug.nsh:87)
+warning 7000: !include: could not find: "D:\PortableApps_p\EdrawMindPortable\App\AppInfo\Launcher\Debug.nsh" (Debug.nsh:87)
 Specifying program details and setting options... (macro:!echo:3)
 Function: ".onInit"
 !insertmacro: RunSegment
@@ -289,7 +289,7 @@ ReadEnvStr: PortableApps.comLocaleID->$0
 !insertmacro: _Switch
 !insertmacro: end of _Switch
 !insertmacro: LanguageCases
-!include: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp" (UTF8)
+!include: "C:\Users\HOME\AppData\Local\Temp\TotalCommanderPortableTemp\nstA61E.tmp" (UTF8)
 !insertmacro: _Case
 !insertmacro: end of _Case
 !insertmacro: _Case
@@ -340,9 +340,9 @@ ReadEnvStr: PortableApps.comLocaleID->$0
 !insertmacro: end of _Case
 !insertmacro: _Case
 !insertmacro: end of _Case
-!include: closed: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
-!delfile: "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
-!delfile: deleted "C:\Users\HOME\AppData\Local\Temp\nstA91B.tmp"
+!include: closed: "C:\Users\HOME\AppData\Local\Temp\TotalCommanderPortableTemp\nstA61E.tmp"
+!delfile: "C:\Users\HOME\AppData\Local\Temp\TotalCommanderPortableTemp\nstA61E.tmp"
+!delfile: deleted "C:\Users\HOME\AppData\Local\Temp\TotalCommanderPortableTemp\nstA61E.tmp"
 !undef: "LangAutoDetectFile"
 !insertmacro: end of LanguageCases
 !insertmacro: DebugMsg
@@ -1027,39 +1027,93 @@ WriteINIStr: [Launch] SinglePortableAppInstance=$0 in $EXEDIR\App\AppInfo\Launch
 !insertmacro: end of _EndIf
 Call "InitLink"
 !insertmacro: Custom_special.nsh_Init
-ReadINIStr $0 [Launch]:ProgramExecutable64 from $EXEDIR\App\AppInfo\Launcher\$BaseName.ini
+!define: "INDEXBASE"="3"
+!define: "INDEX"="1"
+!insertmacro: hook.nsh_Init
+ClearErrors: 
+ReadINIStr $hookpath [$BaseName]:HookDir from $EXEDIR\$BaseName.ini
+IfErrors ?0:+2
+WriteINIStr: [$BaseName] HookDir= in $EXEDIR\$BaseName.ini
 !insertmacro: _If
 !insertmacro: end of _If
-!insertmacro: _And
-!insertmacro: end of _And
-File: "MoreInfo.dll"->"$PLUGINSDIR\MoreInfo.dll" 7168 bytes
-Plugin command: GetFileVersion $EXEDIR\App\$0
-Pop: $1
-!insertmacro: WordFindCall
-!insertmacro: end of WordFindCall
-!insertmacro: SetEnvironmentVariable
-!insertmacro: DebugMsg
-!insertmacro: !getdebug
-!insertmacro: end of !getdebug
-!insertmacro: end of DebugMsg
-Plugin command: Call Kernel32::SetEnvironmentVariable(ts,tr1)
-!insertmacro: end of SetEnvironmentVariable
-!insertmacro: _Else
-!insertmacro: end of _Else
-ReadINIStr $0 [Launch]:ProgramExecutable from $EXEDIR\App\AppInfo\Launcher\$BaseName.ini
-Plugin command: GetFileVersion $EXEDIR\App\$0
-Pop: $1
-!insertmacro: WordFindCall
-!insertmacro: end of WordFindCall
-!insertmacro: SetEnvironmentVariable
-!insertmacro: DebugMsg
-!insertmacro: !getdebug
-!insertmacro: end of !getdebug
-!insertmacro: end of DebugMsg
-Plugin command: Call Kernel32::SetEnvironmentVariable(ts,tr1)
-!insertmacro: end of SetEnvironmentVariable
+StrCpy $hookpath "$EXEDIR\Data\hook" () ()
 !insertmacro: _EndIf
 !insertmacro: end of _EndIf
+!insertmacro: path_canonicalize
+ExpandEnvStrings: $hookpath->$hookpath
+!insertmacro: GetRootCall
+!insertmacro: end of GetRootCall
+!insertmacro: _If
+!insertmacro: end of _If
+StrCpy $hookpath "$EXEDIR\Data\$hookpath" () ()
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+StrCpy $macro_t "$hookpath" () (-1)
+!insertmacro: _If
+!insertmacro: end of _If
+StrCpy $hookpath "$hookpath" (-1) ()
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: end of path_canonicalize
+!insertmacro: _If
+!insertmacro: end of _If
+StrCpy $hookpath "$hookpath\$Bits" () ()
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+ReadEnvStr: ProgramDir->$hookpathto
+ClearErrors: 
+ReadINIStr $strtemp [$BaseName]:HookType from $EXEDIR\$BaseName.ini
+IfErrors ?0:+3
+WriteINIStr: [$BaseName] HookType=|[no]/normal/runbefore/keep in $EXEDIR\$BaseName.ini
+StrCpy $strtemp "|[no]/normal/runbefore/keep" () ()
+!insertmacro: _If
+!insertmacro: end of _If
+!insertmacro: WordFindCall
+!insertmacro: end of WordFindCall
+!insertmacro: _Select
+!insertmacro: end of _Select
+!insertmacro: _Case
+!insertmacro: end of _Case
+!insertmacro: WordFindCall
+!insertmacro: end of WordFindCall
+!insertmacro: WordFindCall
+!insertmacro: end of WordFindCall
+!insertmacro: _Case
+!insertmacro: end of _Case
+!insertmacro: WordFindCall
+!insertmacro: end of WordFindCall
+!insertmacro: WordFindCall
+!insertmacro: end of WordFindCall
+!insertmacro: _Case
+!insertmacro: end of _Case
+StrCpy $HookType "$0" () ()
+StrCpy $1 "" () ()
+!insertmacro: _EndSelect
+!insertmacro: end of _EndSelect
+!insertmacro: _If
+!insertmacro: end of _If
+StrCpy $1 "|[no]/normal/runbefore/keep" () (1)
+WriteINIStr: [$BaseName] HookType=$hooktype|$1 in $EXEDIR\$BaseName.ini
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: _If
+!insertmacro: end of _If
+ReadINIStr $hooklast [$BaseName]:HookLast from $EXEDIR\$BaseName.ini
+!insertmacro: _If
+!insertmacro: end of _If
+!insertmacro: GetParentCall
+!insertmacro: end of GetParentCall
+IfFileExists: "$0\keeped" ? +2 : 0
+StrCpy $hooktype "no" () ()
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: end of hook.nsh_Init
+!undef: "INDEX"
+!undef: "INDEXBASE"
 !insertmacro: end of Custom_special.nsh_Init
 !insertmacro: end of Custom.nsh_Init
 !insertmacro: end of RunSegment
@@ -2363,6 +2417,7 @@ ReadEnvStr: PortableApps.comDisableSplash->$1
 !insertmacro: end of GetParentCall
 !insertmacro: _If
 !insertmacro: end of _If
+File: "MoreInfo.dll"->"$PLUGINSDIR\MoreInfo.dll" 7168 bytes
 Plugin command: GetProductName $1\PortableApps.com\PortableAppsPlatform.exe
 Pop: $R0
 !insertmacro: _If
@@ -2755,7 +2810,7 @@ StrCpy $ExecString "$ExecString $0" () ()
 !insertmacro: _Else
 !insertmacro: end of _Else
 ClearErrors: 
-GetFullPathName: $0->$1 (4602564)
+GetFullPathName: $0->$1 (4606684)
 !insertmacro: _If
 !insertmacro: end of _If
 StrCpy $ExecString "$ExecString $0" () ()
@@ -4826,7 +4881,58 @@ Function: "PreExecPrimary"
 !insertmacro: !getdebug
 !insertmacro: end of !getdebug
 !insertmacro: Custom.nsh_PreExecPrimary
-Nop
+!insertmacro: Custom_special.nsh_PreExecPrimary
+!define: "INDEXBASE"="5"
+!define: "INDEX"="1"
+!insertmacro: hook.nsh_PreExecPrimary
+!insertmacro: _If
+!insertmacro: end of _If
+!insertmacro: _Switch
+!insertmacro: end of _Switch
+!insertmacro: _Case
+!insertmacro: end of _Case
+!insertmacro: _Case
+!insertmacro: end of _Case
+!insertmacro: _Goto
+!insertmacro: end of _Goto
+!insertmacro: _Case
+!insertmacro: end of _Case
+!insertmacro: _If
+!insertmacro: end of _If
+!insertmacro: _And
+!insertmacro: end of _And
+Plugin command: exec /TIMEOUT=1000 $ProgramExecutable  
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: _CaseElse
+!insertmacro: end of _CaseElse
+ClearErrors: 
+!insertmacro: LocateCall
+!insertmacro: end of LocateCall
+IfErrors ?0:+3
+WriteINIStr: [$BaseName] HookLast=$hookpath|error in $EXEDIR\$BaseName.ini
+Goto: +2
+WriteINIStr: [$BaseName] HookLast=$hookpath in $EXEDIR\$BaseName.ini
+!insertmacro: _If
+!insertmacro: end of _If
+!insertmacro: _And
+!insertmacro: end of _And
+!insertmacro: GetParentCall
+!insertmacro: end of GetParentCall
+IfFileExists: "$0\keeped" ? +4 : 0
+FileOpen: $0\keeped as w -> $1
+FileWrite: ->$1
+FileClose: $1
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: _EndSwitch
+!insertmacro: end of _EndSwitch
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: end of hook.nsh_PreExecPrimary
+!undef: "INDEX"
+!undef: "INDEXBASE"
+!insertmacro: end of Custom_special.nsh_PreExecPrimary
 !insertmacro: end of Custom.nsh_PreExecPrimary
 !insertmacro: end of RunSegment
 !insertmacro: RunSegment
@@ -6288,7 +6394,19 @@ RMDir: /r "$TempDirectory"
 !insertmacro: Custom.nsh_PostPrimary
 Call "RemoveLink"
 !insertmacro: Custom_special.nsh_PostPrimary
-Nop
+!define: "INDEXBASE"="7"
+!define: "INDEX"="1"
+!insertmacro: hook.nsh_PostPrimary
+!insertmacro: _If
+!insertmacro: end of _If
+ClearErrors: 
+!insertmacro: LocateCall
+!insertmacro: end of LocateCall
+!insertmacro: _EndIf
+!insertmacro: end of _EndIf
+!insertmacro: end of hook.nsh_PostPrimary
+!undef: "INDEX"
+!undef: "INDEXBASE"
 !insertmacro: end of Custom_special.nsh_PostPrimary
 !insertmacro: end of Custom.nsh_PostPrimary
 !insertmacro: end of RunSegment
@@ -6506,6 +6624,29 @@ warning 6040: LangString "LinkMessage1" is not set in language table of language
 warning 6040: LangString "LinkMessage1" is not set in language table of language Danish
 warning 6040: LangString "LinkMessage1" is not set in language table of language Czech
 warning 6040: LangString "LinkMessage1" is not set in language table of language Bulgarian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Turkish
+warning 6040: LangString "LinkMessage2" is not set in language table of language TradChinese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Thai
+warning 6040: LangString "LinkMessage2" is not set in language table of language Swedish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Spanish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Slovenian
+warning 6040: LangString "LinkMessage2" is not set in language table of language PortugueseBR
+warning 6040: LangString "LinkMessage2" is not set in language table of language Portuguese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Polish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Japanese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Italian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Indonesian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Hungarian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Hebrew
+warning 6040: LangString "LinkMessage2" is not set in language table of language German
+warning 6040: LangString "LinkMessage2" is not set in language table of language Galician
+warning 6040: LangString "LinkMessage2" is not set in language table of language French
+warning 6040: LangString "LinkMessage2" is not set in language table of language Finnish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Estonian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Dutch
+warning 6040: LangString "LinkMessage2" is not set in language table of language Danish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Czech
+warning 6040: LangString "LinkMessage2" is not set in language table of language Bulgarian
 warning 6040: LangString "LangMessage1" is not set in language table of language Turkish
 warning 6040: LangString "LangMessage1" is not set in language table of language TradChinese
 warning 6040: LangString "LangMessage1" is not set in language table of language Thai
@@ -6552,6 +6693,29 @@ warning 6040: LangString "LinkMessage1" is not set in language table of language
 warning 6040: LangString "LinkMessage1" is not set in language table of language Danish
 warning 6040: LangString "LinkMessage1" is not set in language table of language Czech
 warning 6040: LangString "LinkMessage1" is not set in language table of language Bulgarian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Turkish
+warning 6040: LangString "LinkMessage2" is not set in language table of language TradChinese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Thai
+warning 6040: LangString "LinkMessage2" is not set in language table of language Swedish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Spanish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Slovenian
+warning 6040: LangString "LinkMessage2" is not set in language table of language PortugueseBR
+warning 6040: LangString "LinkMessage2" is not set in language table of language Portuguese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Polish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Japanese
+warning 6040: LangString "LinkMessage2" is not set in language table of language Italian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Indonesian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Hungarian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Hebrew
+warning 6040: LangString "LinkMessage2" is not set in language table of language German
+warning 6040: LangString "LinkMessage2" is not set in language table of language Galician
+warning 6040: LangString "LinkMessage2" is not set in language table of language French
+warning 6040: LangString "LinkMessage2" is not set in language table of language Finnish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Estonian
+warning 6040: LangString "LinkMessage2" is not set in language table of language Dutch
+warning 6040: LangString "LinkMessage2" is not set in language table of language Danish
+warning 6040: LangString "LinkMessage2" is not set in language table of language Czech
+warning 6040: LangString "LinkMessage2" is not set in language table of language Bulgarian
 warning 6040: LangString "LangMessage1" is not set in language table of language Turkish
 warning 6040: LangString "LangMessage1" is not set in language table of language TradChinese
 warning 6040: LangString "LangMessage1" is not set in language table of language Thai
@@ -6579,20 +6743,20 @@ Done!
 warning 6001: Variable "SrcUncFlag" not referenced or never set, wasting memory!
 warning 6001: Variable "DstNtfsFlag" not referenced or never set, wasting memory!
 
-Output: "D:\PortableApps_p\PyCharmPortable\PyCharmPortable.exe"
-Install: 0 pages (0 bytes), 1 section (1 required) (16408 bytes), 6196 instructions (173488 bytes), 1617 strings (126516 bytes), 25 language tables (6250 bytes).
+Output: "D:\PortableApps_p\EdrawMindPortable\EdrawMindPortable.exe"
+Install: 0 pages (0 bytes), 1 section (1 required) (16408 bytes), 6362 instructions (178136 bytes), 1648 strings (127226 bytes), 25 language tables (6350 bytes).
 
 Using lzma (compress whole) compression.
 
-EXE header size:              354816 / 38912 bytes
-Install code:                          (322990 bytes)
-Install data:                          (83996 bytes)
-Compressed data:               77831 / 406986 bytes
-CRC (0xFB2DA19A):                  4 / 4 bytes
+EXE header size:               82432 / 38912 bytes
+Install code:                          (328448 bytes)
+Install data:                          (88608 bytes)
+Compressed data:               79766 / 417056 bytes
+CRC (0x130BC803):                  4 / 4 bytes
 
-Total size:                   432651 / 445902 bytes (97.0%)
+Total size:                   162202 / 455972 bytes (35.5%)
 
-229 warnings:
+252 warnings:
   !warning: LangString "LauncherUNCWarn" for language Bulgarian is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
   !warning: LangString "LauncherIncompatibleMinOS" for language Bulgarian is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
   !warning: LangString "LauncherIncompatibleMaxOS" for language Bulgarian is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
@@ -6773,7 +6937,7 @@ Total size:                   432651 / 445902 bytes (97.0%)
   !warning: LangString "LauncherNoJavaDownload" for language Turkish is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
   !warning: LangString "LauncherNoJavaCancelled" for language Turkish is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
   !warning: LangString "LauncherProgramFiles" for language Turkish is missing, using fallback from "Languages\English.nsh" (macro:LANGFILE_SETSTRING:7)
-  7000: !include: could not find: "D:\PortableApps_p\PyCharmPortable\App\AppInfo\Launcher\Debug.nsh" (Debug.nsh:87)
+  7000: !include: could not find: "D:\PortableApps_p\EdrawMindPortable\App\AppInfo\Launcher\Debug.nsh" (Debug.nsh:87)
   6040: LangString "LinkMessage1" is not set in language table of language Turkish
   6040: LangString "LinkMessage1" is not set in language table of language TradChinese
   6040: LangString "LinkMessage1" is not set in language table of language Thai
@@ -6797,6 +6961,29 @@ Total size:                   432651 / 445902 bytes (97.0%)
   6040: LangString "LinkMessage1" is not set in language table of language Danish
   6040: LangString "LinkMessage1" is not set in language table of language Czech
   6040: LangString "LinkMessage1" is not set in language table of language Bulgarian
+  6040: LangString "LinkMessage2" is not set in language table of language Turkish
+  6040: LangString "LinkMessage2" is not set in language table of language TradChinese
+  6040: LangString "LinkMessage2" is not set in language table of language Thai
+  6040: LangString "LinkMessage2" is not set in language table of language Swedish
+  6040: LangString "LinkMessage2" is not set in language table of language Spanish
+  6040: LangString "LinkMessage2" is not set in language table of language Slovenian
+  6040: LangString "LinkMessage2" is not set in language table of language PortugueseBR
+  6040: LangString "LinkMessage2" is not set in language table of language Portuguese
+  6040: LangString "LinkMessage2" is not set in language table of language Polish
+  6040: LangString "LinkMessage2" is not set in language table of language Japanese
+  6040: LangString "LinkMessage2" is not set in language table of language Italian
+  6040: LangString "LinkMessage2" is not set in language table of language Indonesian
+  6040: LangString "LinkMessage2" is not set in language table of language Hungarian
+  6040: LangString "LinkMessage2" is not set in language table of language Hebrew
+  6040: LangString "LinkMessage2" is not set in language table of language German
+  6040: LangString "LinkMessage2" is not set in language table of language Galician
+  6040: LangString "LinkMessage2" is not set in language table of language French
+  6040: LangString "LinkMessage2" is not set in language table of language Finnish
+  6040: LangString "LinkMessage2" is not set in language table of language Estonian
+  6040: LangString "LinkMessage2" is not set in language table of language Dutch
+  6040: LangString "LinkMessage2" is not set in language table of language Danish
+  6040: LangString "LinkMessage2" is not set in language table of language Czech
+  6040: LangString "LinkMessage2" is not set in language table of language Bulgarian
   6040: LangString "LangMessage1" is not set in language table of language Turkish
   6040: LangString "LangMessage1" is not set in language table of language TradChinese
   6040: LangString "LangMessage1" is not set in language table of language Thai

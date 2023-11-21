@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root version="4" type="3" timestamp="1653187510">
+	<apps>
+		<item path="C:\Windows\system32\lsass.exe" timestamp="1653068883"/>
+		<item path="D:\PortableApps\TotalUninstallPortable\App\simplewall\simplewall64.exe" timestamp="1653099693" is_enabled="true"/>
+		<item path="System" timestamp="1653068883"/>
+		<item path="C:\Windows\system32\svchost.exe" timestamp="1653068883"/>
+		<item path="D:\portableapps\totaluninstallportable\app\tu7.31\tu64.exe" timestamp="1653174833">test</item>
+	</apps>
+	<rules_custom>
+	</rules_custom>
+	<rules_config>
+	</rules_config>
+</root>

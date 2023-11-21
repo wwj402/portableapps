@@ -1,0 +1,144 @@
+[Launch]
+AppName=
+ProgramExecutable=
+ProgramExecutableWhenParameters=
+ProgramExecutable64=
+ProgramExecutableWhenParameters64=
+CommandLineArguments=
+WorkingDirectory=
+MinOS=none / 2000 / XP / 2003 / Vista / 2008 / 7 / 2008 R2
+MaxOS=none / 2000 / XP / 2003 / Vista / 2008 / 7 / 2008 R2
+RunAsAdmin=force / try / compile-force / none
+RunAsAdmin2000=force / try / none
+RunAsAdminXP=force / try / none
+RunAsAdmin2003=force / try / none
+RunAsAdminVista=force / try / none
+RunAsAdmin2008=force / try / none
+RunAsAdmin7=force / try / none
+RunAsAdmin2008R2=force / try / none
+CleanTemp=true
+SinglePortableAppInstance=false
+SingleAppInstance=true
+CloseEXE=
+SplashTime=1500
+LaunchAppAfterSplash=false
+WaitForProgram=true
+WaitForOtherInstances=true
+WaitForEXE1=
+RefreshShellIcons=before / after / both / none
+HideCommandLineWindow=false
+DirectoryMoveOK=yes / warn / no
+NoSpacesInPath=false
+SupportsUNC=yes / warn / no
+
+[Activate]
+Registry=false
+Java=none, find or require
+XML=false
+
+[LiveMode]
+CopyApp=true
+; CopyData
+
+[Environment]
+; This section is for the setting of environment variables exsit. 
+; The key names are the environment variables, and the values are the values which are assigned to them.
+
+
+[RegistryKeys]
+appname=HKEY_CURRENT_USER\Software\appname
+-=HKEY_LOCAL_MACHINE\SOFTWARE\appname
+
+[RegistryValueWrite]
+HKEY_LOCAL_MACHINE\SOFTWARE\appname\setup=REG_SZ:%PAL:AppDir%\appname.exe
+
+[RegistryCleanupIfEmpty]
+1=HKEY_CURRENT_USER\Software\appname
+
+[RegistryCleanupForce]
+1=HKCU\Software\Publisher
+
+[RegistryValueBackupDelete]
+1=HKEY_CURRENT_USER\Software\appname
+
+[QtKeysCleanup]
+1=Qt Factory Cache 4.6\com.trolltech.Qt.QImageIOHandlerFactoryInterface:
+2=Qt Plugin Cache 4.6.false
+
+[FilesMove]
+Settings\SciTE.session=%PAL:AppDir%\autoit-v3\SciTe
+
+[DirectoriesMove]
+user\AutoIt v3=%LOCALAPPDATA%\AutoIt v3
+
+[DirectoriesCleanupIfEmpty]
+1=%APPDATA%\Publisher
+
+[DirectoriesCleanupForce]
+1=%APPDATA%\Publisher
+
+[Language]
+Base=%PortableApps.comLocaleName%
+Default=ChineseSimplified	
+CheckIfExists=%PAL:AppDir%\oCam\language\%PAL:LanguageCustom%.ini	
+DefaultIfNotExists=ChineseSimplified
+
+[LanguageStrings]
+ENGLISH=english
+SIMPCHINESE=ChineseSimplified
+TRADCHINESE=ChineseTraditional
+GEORGIAN=georgian
+GERMAN=german
+GREEK=Greek
+HUNGARIAN=hungarian
+ITALIAN=Italian
+JAPANESE=Japanese
+KOREAN=korean
+POLISH=polish
+PORTUGUESEBR=Portuguese
+ROMANIAN=Romanian
+RUSSIAN=Russian
+SPANISH=Spanish
+UZBEK=Uzbek
+
+[LanguageFile]
+Type=INI ConfigRead, INI, XML attribute, XML text
+File=%PAL:DataDir%\oCam\Config.ini
+Section=GlobalLanguage
+Key=LangID
+TrimRight=
+
+[FileWrite1]
+Type=Replace
+CaseSensitive=false
+Encoding=auto / ANSI / UTF-16LE
+File=%PAL:DataDir%\settings\SciTE.session
+Find=%PAL:LastDrive%%PAL:LastPackagePartialDir%
+Replace=%PAL:Drive%%PAL:PackagePartialDir%
+
+[FileWrite2]
+Type=INI
+File=%PAL:DataDir%\settings\data.conf
+Section=Paths
+Key=home_directory
+Value=%PAL:DocumentsDir%
+
+[FileWrite3]
+Type=ConfigWrite
+CaseSensitive=false
+File=%PAL:DataDir%\settings\data.conf
+Entry='%PAL:LastDrive%\'
+Value=%PAL:CurrentDrive%\
+
+[FileWrite4]
+File=%PAL:DataDir%\freecol\freecol\options.xml
+Type=XML attribute
+XPath=/clientOptions/languageOption[@id="model.option.languageOption"]
+Attribute=value
+Value=%PAL:LanguageCustom%
+
+[FileWrite5]
+File=%PAL:DataDir%\freecol\freecol\options.xml
+Type=XML text
+XPath=/clientOptions/languageOption[@id="model.option.languageOption"]
+Value=%PAL:LanguageCustom%
